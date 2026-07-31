@@ -47,6 +47,7 @@ input{
     border:none;
     border-radius:8px;
     font-size:16px;
+    box-sizing:border-box;
 }
 
 button{
@@ -72,7 +73,8 @@ button:hover{
     word-break:break-all;
 }
 
-#message{
+#message,
+#cryptoMessage{
     color:#00ff99;
     white-space:pre-wrap;
     margin-top:15px;
@@ -109,6 +111,7 @@ button:hover{
 <h3>
 Balance: KES <span id="balance">0.00</span>
 </h3>
+
 <input
 type="text"
 id="phone"
@@ -117,7 +120,7 @@ placeholder="2547XXXXXXXX">
 <input
 type="number"
 id="amount"
-placeholder="KES 500 - 250,000">
+placeholder="KES 500 - 250000">
 
 <button onclick="requestDeposit()">
 💳 Deposit via Pesapal
@@ -130,7 +133,8 @@ placeholder="KES 500 - 250,000">
 <h2>Deposit with USDT (BEP20)</h2>
 
 <p>
-Send your USDT using the <b>BNB Smart Chain (BEP20)</b> network only.
+Send your USDT using the
+<b>BNB Smart Chain (BEP20)</b> network only.
 </p>
 
 <div class="walletBox">
@@ -177,13 +181,13 @@ placeholder="Paste Transaction Hash (TXID)">
 <script>
 
 showBalance("balance");
+
 async function requestDeposit(){
 
     const phone = document.getElementById("phone").value.trim();
     const amount = parseFloat(document.getElementById("amount").value);
     const message = document.getElementById("message");
-
-    if(phone===""){
+        if(phone===""){
         message.innerHTML="Please enter your phone number.";
         return;
     }
@@ -215,7 +219,7 @@ async function requestDeposit(){
 
     try{
 
-        const response = await fetch("http://localhost:3000/api/pay",{
+        const response = await fetch("/api/pay",{
 
             method:"POST",
 
@@ -237,6 +241,8 @@ async function requestDeposit(){
 
         const data = await response.json();
 
+        console.log(data);
+
         if(data.redirect_url){
             window.location.href=data.redirect_url;
             return;
@@ -247,68 +253,76 @@ async function requestDeposit(){
             return;
         }
 
-        message.innerHTML=JSON.stringify(data,null,2);
+        message.innerHTML =
+            JSON.stringify(data,null,2);
 
-    }catch(err){
+    }catch(error){
 
-        console.log(err);
+        console.error("FETCH ERROR:", error);
 
-        message.innerHTML="Unable to connect to payment server.";
+        message.innerHTML =
+            "Connection Error:<br>" + error.message;
 
     }
 
 }
+    function copyWallet(){
 
-function copyWallet(){
-
-    const wallet=document.getElementById("walletAddress");
+    const wallet = document.getElementById("walletAddress");
 
     wallet.select();
     wallet.setSelectionRange(0,99999);
 
     navigator.clipboard.writeText(wallet.value);
 
-    document.getElementById("cryptoMessage").innerHTML=
+    document.getElementById("cryptoMessage").innerHTML =
     "✅ Wallet address copied.";
 
 }
 
 function submitCryptoDeposit(){
 
-    const txid=document.getElementById("txid").value.trim();
+    const txid = document.getElementById("txid").value.trim();
 
     if(txid===""){
 
         alert("Please paste your Transaction Hash (TXID).");
-
         return;
 
     }
 
-    localStorage.setItem("cryptoDeposit",JSON.stringify({
+    localStorage.setItem(
+        "cryptoDeposit",
+        JSON.stringify({
 
-        wallet:"0x1a81d4765c26f932726d345dbe0cf08d000cb628",
+            wallet:"0x1a81d4765c26f932726d345dbe0cf08d000cb628",
 
-        txid:txid,
+            txid:txid,
 
-        status:"Pending Verification",
+            status:"Pending Verification",
 
-        date:new Date().toLocaleString()
+            date:new Date().toLocaleString()
 
-    }));
+        })
+    );
 
-    document.getElementById("cryptoMessage").innerHTML=
+    document.getElementById("cryptoMessage").innerHTML =
     "✅ Your crypto deposit request has been submitted and is awaiting verification.";
 
 }
+
 </script>
 
 <br><br>
 
 <a href="dashboard.html">
-    <button>
-        Back to Dashboard
-    </button>
+
+<button>
+
+⬅️ Back to Dashboard
+
+</button>
+
 </a>
 
 </section>
