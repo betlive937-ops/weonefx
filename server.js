@@ -232,7 +232,7 @@ app.post("/api/pay", async (req, res) => {
 
             description: "WeOneFX Wallet Deposit",
 
-            callback_url: "http://localhost:3000/payment-success.html",
+           callback_url: "https://truthful-motivation-production-2515.up.railway.app/payment-success.html",
 
             notification_id: process.env.PESAPAL_IPN_ID,
 
