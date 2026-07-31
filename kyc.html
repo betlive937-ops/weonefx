@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>KYC Verification - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+.container{
+max-width:700px;
+margin:40px auto;
+background:#1f1f1f;
+padding:25px;
+border-radius:10px;
+color:white;
+}
+
+input{
+width:100%;
+padding:12px;
+margin:10px 0;
+}
+
+button{
+padding:12px 20px;
+background:green;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+#status{
+margin-top:20px;
+font-weight:bold;
+color:gold;
+}
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX</h2>
+
+<div>
+<a href="dashboard.html">Dashboard</a>
+<a href="trade.html">Trade</a>
+<a href="deposit.html">Deposit</a>
+<a href="withdraw.html">Withdraw</a>
+<a href="history.html">History</a>
+<a href="kyc.html">KYC</a>
+<a href="profile.html">Profile</a>
+<a href="login.html">Logout</a>
+</div>
+
+</nav>
+
+<div class="container">
+
+<h1>KYC Verification</h1>
+
+<input type="text" id="fullname" placeholder="Full Name">
+
+<input type="text" id="idnumber" placeholder="National ID / Passport">
+
+<label>Front of ID</label>
+<input type="file" id="front">
+
+<label>Back of ID</label>
+<input type="file" id="back">
+
+<label>Selfie</label>
+<input type="file" id="selfie">
+
+<br><br>
+
+<button onclick="submitKYC()">
+Submit KYC
+</button>
+
+<p id="status"></p>
+
+</div>
+
+<script>
+
+function submitKYC(){
+
+let user = JSON.parse(localStorage.getItem("loggedUser"));
+
+if(!user){
+alert("Please login first.");
+return;
+}
+
+let kyc = {
+email:user.email,
+fullname:document.getElementById("fullname").value,
+idnumber:document.getElementById("idnumber").value,
+front:document.getElementById("front").files.length>0 ? document.getElementById("front").files[0].name : "",
+back:document.getElementById("back").files.length>0 ? document.getElementById("back").files[0].name : "",
+selfie:document.getElementById("selfie").files.length>0 ? document.getElementById("selfie").files[0].name : "",
+status:"Pending",
+date:new Date().toLocaleString()
+};
+
+let requests = JSON.parse(localStorage.getItem("kycRequests")) || [];
+
+requests.push(kyc);
+
+localStorage.setItem("kycRequests",JSON.stringify(requests));
+
+document.getElementById("status").innerHTML =
+"✅ KYC submitted successfully. Waiting for admin approval.";
+
+document.getElementById("fullname").value="";
+document.getElementById("idnumber").value="";
+document.getElementById("front").value="";
+document.getElementById("back").value="";
+document.getElementById("selfie").value="";
+
+}
+
+</script>
+
+</body>
+</html>

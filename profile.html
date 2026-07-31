@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Profile - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.profile-card{
+max-width:700px;
+margin:40px auto;
+background:#1f1f1f;
+padding:25px;
+border-radius:10px;
+color:white;
+}
+
+.profile-card h2{
+text-align:center;
+margin-bottom:20px;
+}
+
+.info{
+margin:12px 0;
+font-size:18px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin:10px 0;
+}
+
+button{
+padding:12px 20px;
+background:#28a745;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:hover{
+background:#218838;
+}
+
+#message{
+margin-top:15px;
+font-weight:bold;
+color:gold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX</h2>
+
+<div>
+
+<a href="dashboard.html">Dashboard</a>
+<a href="deposit.html">Deposit</a>
+<a href="withdraw.html">Withdraw</a>
+<a href="trade.html">Trade</a>
+<a href="history.html">History</a>
+<a href="kyc.html">KYC</a>
+<a href="profile.html">Profile</a>
+<a href="login.html">Logout</a>
+
+</div>
+
+</nav>
+
+<div class="profile-card">
+
+<h2>My Profile</h2>
+
+<div class="info">
+<strong>Full Name:</strong>
+<span id="fullname"></span>
+</div>
+
+<div class="info">
+<strong>Email:</strong>
+<span id="email"></span>
+</div>
+
+<div class="info">
+<strong>Balance:</strong>
+$<span id="balance"></span>
+</div>
+
+<div class="info">
+<strong>KYC Status:</strong>
+<span id="kycStatus">Not Submitted</span>
+</div>
+
+<hr>
+
+<h3>Change Password</h3>
+
+<input
+type="password"
+id="newPassword"
+placeholder="Enter New Password">
+
+<button onclick="changePassword()">
+Update Password
+</button>
+
+<p id="message"></p>
+
+</div>
+
+<script>
+
+let user = JSON.parse(localStorage.getItem("loggedUser"));
+
+if(!user){
+
+window.location.href="login.html";
+
+}
+
+document.getElementById("fullname").innerHTML =
+user.fullName || user.fullname;
+
+document.getElementById("email").innerHTML =
+user.email;
+
+document.getElementById("balance").innerHTML =
+Number(user.balance||0).toFixed(2);
+
+// Check KYC status
+let requests =
+JSON.parse(localStorage.getItem("kycRequests")) || [];
+
+let myKYC =
+requests.find(function(k){
+
+return k.email===user.email;
+
+});
+
+if(myKYC){
+
+document.getElementById("kycStatus").innerHTML =
+myKYC.status;
+
+}
+
+function changePassword(){
+
+let password =
+document.getElementById("newPassword").value;
+
+if(password.length<4){
+
+alert("Password must be at least 4 characters.");
+
+return;
+
+}
+
+user.password=password;
+
+let users =
+JSON.parse(localStorage.getItem("users")) || [];
+
+let index =
+users.findIndex(function(u){
+
+return u.email===user.email;
+
+});
+
+if(index!=-1){
+
+users[index]=user;
+
+localStorage.setItem("users",JSON.stringify(users));
+
+localStorage.setItem("loggedUser",JSON.stringify(user));
+
+document.getElementById("message").innerHTML =
+"✅ Password updated successfully.";
+
+document.getElementById("newPassword").value="";
+
+}
+
+}
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - WeOneBet</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav>
+<h2>WeOneBet</h2>
+</nav>
+
+<section class="hero">
+
+<h1>Login</h1>
+
+<input type="email" id="email" placeholder="Email"><br><br>
+
+<input type="password" id="password" placeholder="Password"><br><br>
+
+<button onclick="login()">Login</button>
+
+<p>Don't have an account?
+<a href="register.html">Register</a>
+</p>
+
+</section>
+
+<script>
+
+function login(){
+
+let email=document.getElementById("email").value.trim();
+let password=document.getElementById("password").value;
+
+let users=JSON.parse(localStorage.getItem("users")) || [];
+
+let user=users.find(function(u){
+    return u.email===email && u.password===password;
+});
+
+if(user){
+    if(user.frozen){
+
+    alert("Your account has been frozen. Please contact support.");
+
+    return;
+
+}
+if(user.frozen){
+
+    alert("Your account has been frozen. Please contact support.");
+
+    return;
+
+}
+    localStorage.setItem("loggedUser",JSON.stringify(user));
+
+    alert("Login successful!");
+
+    window.location.href="dashboard.html";
+
+}else{
+
+    alert("Invalid email or password.");
+
+}
+
+}
+
+</script>
+
+</body>
+</html>

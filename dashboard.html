@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - WeOneFX</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX</h2>
+
+<div>
+<a href="dashboard.html">Dashboard</a>
+<a href="deposit.html">Deposit</a>
+<a href="withdraw.html">Withdraw</a>
+<a href="trade.html">Trade</a>
+<a href="history.html">History</a>
+<a href="profile.html">Profile</a>
+<a href="login.html">Logout</a>
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1 id="welcome">Dashboard</h1>
+
+<h3>Available Balance</h3>
+
+<h1>$<span id="balance">0.00</span></h1>
+
+<br>
+
+<a href="deposit.html">
+<button>Deposit Funds</button>
+</a>
+
+<a href="withdraw.html">
+<button>Withdraw Funds</button>
+</a>
+
+<br>
+
+<a href="trade.html">
+<button>Start Trading</button>
+</a>
+
+<a href="history.html">
+<button>Trade History</button>
+</a>
+
+</section>
+
+<script src="app.js"></script>
+
+<script>
+
+// Check if user is logged in
+let user = getLoggedUser();
+
+if (!user) {
+    alert("Please login first.");
+    window.location.href = "login.html";
+}
+
+// Show user's name
+document.getElementById("welcome").innerHTML =
+"Welcome, " + (user.fullName || "User");
+
+// Show balance
+showBalance("balance");
+
+// Refresh balance every second
+setInterval(function () {
+    showBalance("balance");
+}, 1000);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Pesapal Payment</title>
+</head>
+<body>
+    <h2>Test Payment</h2>
+
+    <button onclick="pay()">Pay KES 100</button>
+
+    <pre id="result"></pre>
+
+    <script>
+        async function pay() {
+            const response = await fetch("/api/pay", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    amount: 100,
+                    name: "Evans",
+                    email: "test@example.com",
+                    phone: "254700000000"
+                })
+            });
+
+            const data = await response.json();
+
+            document.getElementById("result").textContent =
+                JSON.stringify(data, null, 2);
+
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            }
+        }
+    </script>
+</body>
+</html>

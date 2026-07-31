@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Admin Trading Control</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX Admin</h2>
+
+<div>
+
+<a href="admin.html">Dashboard</a>
+<a href="admin-users.html">Users</a>
+<a href="admin-trading.html">Trading</a>
+
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1>Trading Control</h1>
+
+<button onclick="setTradeMode('WIN')">
+Force WIN
+</button>
+
+<br><br>
+
+<button onclick="setTradeMode('LOSS')">
+Force LOSS
+</button>
+
+<br><br>
+
+<button onclick="setTradeMode('RANDOM')">
+Random Mode
+</button>
+
+</section>
+
+<script src="app.js"></script>
+
+</body>
+</html>

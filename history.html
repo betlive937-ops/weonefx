@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Trade History - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:10px;
+text-align:center;
+}
+
+th{
+background:#222;
+color:#fff;
+}
+
+button{
+padding:10px 20px;
+margin:8px;
+cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX</h2>
+
+<div>
+<a href="dashboard.html">Dashboard</a>
+<a href="deposit.html">Deposit</a>
+<a href="withdraw.html">Withdraw</a>
+<a href="trade.html">Trade</a>
+<a href="history.html">History</a>
+<a href="profile.html">Profile</a>
+<a href="login.html">Logout</a>
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1>My Trade History</h1>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Date & Time</th>
+<th>Direction</th>
+<th>Amount</th>
+<th>Result</th>
+</tr>
+
+</thead>
+
+<tbody id="historyTable">
+
+</tbody>
+
+</table>
+
+<br>
+
+<button onclick="exportHistoryCSV()">
+Export CSV
+</button>
+
+<button onclick="clearAllHistory()">
+Clear History
+</button>
+
+</section>
+
+<script src="app.js"></script>
+
+<script>
+
+function refreshHistory(){
+
+let trades = getTradeHistory();
+
+let table = document.getElementById("historyTable");
+
+table.innerHTML = "";
+
+if(trades.length===0){
+
+table.innerHTML = `
+<tr>
+<td colspan="4">No trades yet.</td>
+</tr>
+`;
+
+return;
+
+}
+
+trades.forEach(function(trade){
+
+table.innerHTML += `
+<tr>
+<td>${trade.date}</td>
+<td>${trade.direction}</td>
+<td>$${Number(trade.amount).toFixed(2)}</td>
+<td>${trade.result}</td>
+</tr>
+`;
+
+});
+
+}
+
+function clearAllHistory(){
+
+if(confirm("Clear your trade history?")){
+
+clearHistory();
+
+refreshHistory();
+
+}
+
+}
+
+refreshHistory();
+
+</script>
+
+</body>
+</html>

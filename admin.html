@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>WeOneFX Admin Panel</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.admin-card{
+background:#1f1f1f;
+padding:20px;
+margin:20px auto;
+border-radius:10px;
+width:95%;
+max-width:1200px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th{
+background:#f4b400;
+color:black;
+padding:12px;
+}
+
+td{
+padding:12px;
+border-bottom:1px solid #444;
+text-align:center;
+color:white;
+}
+
+button{
+margin:3px;
+padding:8px 14px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.stats{
+display:flex;
+justify-content:space-around;
+flex-wrap:wrap;
+margin:20px 0;
+}
+
+.stat-box{
+background:#2b2b2b;
+padding:20px;
+border-radius:10px;
+width:220px;
+margin:10px;
+text-align:center;
+}
+
+.stat-box h2{
+color:#FFD700;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX Admin</h2>
+
+<div>
+
+<a href="dashboard.html">Dashboard</a>
+
+<a href="trade.html">Trade</a>
+
+<a href="history.html">History</a>
+
+<a href="admin.html">Admin</a>
+
+<a href="login.html">Logout</a>
+
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1>Admin Control Panel</h1>
+
+<div class="stats">
+
+<div class="stat-box">
+
+<h3>Total Users</h3>
+
+<div class="stats">
+
+<div class="stat-box">
+<h3>Total Users</h3>
+<h2 id="totalUsers">0</h2>
+</div>
+
+<div class="stat-box">
+<h3>Total Platform Balance</h3>
+<h2>$<span id="platformBalance">0.00</span></h2>
+</div>
+
+<div class="stat-box">
+<h3>Total Trades</h3>
+<h2 id="totalTrades">0</h2>
+</div>
+
+<div class="stat-box">
+<h3>Pending Deposits</h3>
+<h2 id="pendingDeposits">0</h2>
+</div>
+
+<div class="stat-box">
+<h3>Pending Withdrawals</h3>
+<h2 id="pendingWithdrawals">0</h2>
+</div>
+
+<div class="stat-box">
+<h3>Frozen Users</h3>
+<h2 id="frozenUsers">0</h2>
+</div>
+
+</div>
+</div>
+
+<div class="admin-card">
+
+<h2>Registered Users</h2>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>#</th>
+
+<th>Name</th>
+
+<th>Email</th>
+
+<th>Balance</th>
+
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="usersTable">
+    </tbody>
+
+</table>
+
+<br>
+
+<button onclick="loadUsers()">
+Refresh Users
+</button>
+
+<button onclick="localStorage.removeItem('users');loadUsers();">
+Delete All Users
+</button>
+
+</div>
+
+</section>
+<script>
+
+function loadUsers() {
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    let trades = JSON.parse(localStorage.getItem("trades")) || [];
+
+    let table = document.getElementById("usersTable");
+    if (!table) return;
+
+    table.innerHTML = "";
+
+    let totalBalance = 0;
+
+    users.forEach(function(user, index) {
+        totalBalance += Number(user.balance || 0);
+
+        table.innerHTML += `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${user.fullName}</td>
+            <td>${user.email}</td>
+            <td>$${user.balance || 0}</td>
+            <td>
+    <button onclick="toggleUser(${index})">
+        ${user.frozen ? "Unfreeze" : "Freeze"}
+    </button>
+
+    <button onclick="deleteUser(${index})">
+        Delete
+    </button>
+</td>
+        </tr>`;
+    });
+
+   document.getElementById("totalUsers").innerText = users.length;
+
+document.getElementById("platformBalance").innerText =
+totalBalance.toFixed(2);
+
+document.getElementById("totalTrades").innerText =
+trades.length;
+
+document.getElementById("pendingDeposits").innerText =
+deposits.filter(d => d.status === "Pending").length;
+
+document.getElementById("pendingWithdrawals").innerText =
+withdrawals.filter(w => w.status === "Pending").length;
+
+document.getElementById("frozenUsers").innerText =
+frozen;
+}
+function toggleUser(index){
+
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+
+    users[index].frozen = !users[index].frozen;
+
+    localStorage.setItem("users", JSON.stringify(users));
+
+    loadUsers();
+
+}
+function deleteUser(index) {
+
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    let trades = JSON.parse(localStorage.getItem("trades")) || [];
+
+    if (confirm("Delete this user?")) {
+
+        let email = users[index].email;
+
+        users.splice(index, 1);
+        localStorage.setItem("users", JSON.stringify(users));
+
+        trades = trades.filter(function(trade) {
+            return trade.email !== email;
+        });
+
+        localStorage.setItem("trades", JSON.stringify(trades));
+
+        loadUsers();
+    }
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>

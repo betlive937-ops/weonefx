@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin Deposits - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid #444;
+padding:10px;
+text-align:center;
+}
+
+th{
+background:#00b894;
+color:white;
+}
+
+button{
+padding:8px 15px;
+margin:3px;
+cursor:pointer;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX Admin</h2>
+
+<div>
+<a href="admin.html">Dashboard</a>
+<a href="admin-deposits.html">Deposits</a>
+<a href="admin-withdrawals.html">Withdrawals</a>
+<a href="login.html">Logout</a>
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1>Deposit Requests</h1>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Phone</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="depositTable">
+
+</tbody>
+
+</table>
+
+</section>
+
+<script src="app.js"></script>
+
+<script>
+
+function loadDeposits(){
+
+let deposits=JSON.parse(localStorage.getItem("deposits"))||[];
+
+let table=document.getElementById("depositTable");
+
+table.innerHTML="";
+
+if(deposits.length===0){
+
+table.innerHTML="<tr><td colspan='6'>No deposit requests.</td></tr>";
+
+return;
+
+}
+
+deposits.forEach(function(dep,index){
+
+table.innerHTML+=`
+<tr>
+<td>${dep.fullName}</td>
+<td>${dep.email}</td>
+<td>${dep.phone}</td>
+<td>$${Number(dep.amount).toFixed(2)}</td>
+<td>${dep.status}</td>
+<td>
+
+<button onclick="approveDeposit(${index})">Approve</button>
+
+<button onclick="rejectDeposit(${index})">Reject</button>
+
+</td>
+</tr>
+`;
+
+});
+
+}
+
+function approveDeposit(index){
+
+let deposits=JSON.parse(localStorage.getItem("deposits"))||[];
+let users=JSON.parse(localStorage.getItem("users"))||[];
+
+deposits[index].status="Approved";
+
+users.forEach(function(user){
+
+if(user.email===deposits[index].email){
+
+user.balance=Number(user.balance)+Number(deposits[index].amount);
+
+addNotification(
+user.email,
+"💰 Your deposit of $"+Number(deposits[index].amount).toFixed(2)+" has been approved."
+);
+
+}
+
+});
+
+localStorage.setItem("users",JSON.stringify(users));
+localStorage.setItem("deposits",JSON.stringify(deposits));
+
+alert("Deposit approved successfully.");
+
+loadDeposits();
+
+}
+
+function rejectDeposit(index){
+
+let deposits=JSON.parse(localStorage.getItem("deposits"))||[];
+
+deposits[index].status="Rejected";
+
+addNotification(
+deposits[index].email,
+"❌ Your deposit request has been rejected."
+);
+
+localStorage.setItem("deposits",JSON.stringify(deposits));
+
+alert("Deposit rejected.");
+
+loadDeposits();
+
+}
+
+loadDeposits();
+
+</script>
+
+</body>
+
+</html>

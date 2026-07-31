@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin KYC - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.admin-card{
+background:#1f1f1f;
+padding:20px;
+margin:20px auto;
+border-radius:10px;
+width:95%;
+max-width:1200px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th{
+background:#f4b400;
+color:black;
+padding:12px;
+}
+
+td{
+padding:12px;
+border-bottom:1px solid #444;
+text-align:center;
+color:white;
+}
+
+button{
+padding:8px 14px;
+margin:2px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.approve{
+background:green;
+color:white;
+}
+
+.reject{
+background:red;
+color:white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX Admin</h2>
+
+<div>
+
+<a href="admin.html">Dashboard</a>
+<a href="admin-deposits.html">Deposits</a>
+<a href="admin-withdrawals.html">Withdrawals</a>
+<a href="admin-users.html">Users</a>
+<a href="admin-kyc.html">KYC</a>
+<a href="login.html">Logout</a>
+
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1>KYC Verification Requests</h1>
+
+<div class="admin-card">
+
+<table>
+
+<thead>
+
+<tr>
+<th>#</th>
+<th>Email</th>
+<th>Full Name</th>
+<th>ID Number</th>
+<th>Front ID</th>
+<th>Back ID</th>
+<th>Selfie</th>
+<th>Status</th>
+<th>Date</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="kycTable">
+
+</tbody>
+
+</table>
+
+</div>
+
+</section>
+
+<script src="app.js"></script>
+
+<script>
+
+function loadKYC(){
+
+let requests=JSON.parse(localStorage.getItem("kycRequests"))||[];
+
+let table=document.getElementById("kycTable");
+
+table.innerHTML="";
+
+if(requests.length===0){
+
+table.innerHTML="<tr><td colspan='10'>No KYC requests.</td></tr>";
+
+return;
+
+}
+
+requests.forEach(function(kyc,index){
+
+table.innerHTML+=`
+
+<tr>
+
+<td>${index+1}</td>
+<td>${kyc.email}</td>
+<td>${kyc.fullname}</td>
+<td>${kyc.idnumber}</td>
+<td>${kyc.front}</td>
+<td>${kyc.back}</td>
+<td>${kyc.selfie}</td>
+<td>${kyc.status}</td>
+<td>${kyc.date}</td>
+
+<td>
+
+<button class="approve"
+onclick="approveKYC(${index})">
+Approve
+</button>
+
+<button class="reject"
+onclick="rejectKYC(${index})">
+Reject
+</button>
+
+</td>
+
+</tr>
+
+`;
+
+});
+
+}
+
+function approveKYC(index){
+
+let requests=JSON.parse(localStorage.getItem("kycRequests"))||[];
+
+requests[index].status="Approved";
+
+localStorage.setItem(
+"kycRequests",
+JSON.stringify(requests)
+);
+
+addNotification(
+requests[index].email,
+"✅ Your KYC verification has been approved."
+);
+
+alert("KYC Approved.");
+
+loadKYC();
+
+}
+
+function rejectKYC(index){
+
+let requests=JSON.parse(localStorage.getItem("kycRequests"))||[];
+
+requests[index].status="Rejected";
+
+localStorage.setItem(
+"kycRequests",
+JSON.stringify(requests)
+);
+
+addNotification(
+requests[index].email,
+"❌ Your KYC verification has been rejected."
+);
+
+alert("KYC Rejected.");
+
+loadKYC();
+
+}
+
+loadKYC();
+
+</script>
+
+</body>
+</html>

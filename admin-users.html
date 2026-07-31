@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Users - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid #555;
+padding:10px;
+text-align:center;
+}
+
+th{
+background:#222;
+color:white;
+}
+
+input{
+padding:10px;
+width:300px;
+margin:20px;
+}
+
+button{
+padding:8px 15px;
+margin:3px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX Admin</h2>
+
+<div>
+<a href="admin-dashboard.html">Dashboard</a>
+<a href="admin-users.html">Users</a>
+<a href="admin-deposits.html">Deposits</a>
+<a href="admin-withdrawals.html">Withdrawals</a>
+<a href="login.html">Logout</a>
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1>User Management</h1>
+
+<input
+type="text"
+id="search"
+placeholder="Search by name or email..."
+onkeyup="loadUsers()">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Name</th>
+<th>Email</th>
+<th>Balance</th>
+<th>Status</th>
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="usersTable">
+
+</tbody>
+
+</table>
+
+</section>
+
+<script src="app.js"></script>
+
+<script>
+
+loadUsers();
+
+</script>
+
+</body>
+
+</html>

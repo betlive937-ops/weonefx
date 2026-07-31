@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Notifications - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.notifications{
+max-width:900px;
+margin:40px auto;
+background:#1f1f1f;
+padding:20px;
+border-radius:10px;
+color:white;
+}
+
+.notice{
+background:#2d2d2d;
+padding:15px;
+margin:10px 0;
+border-left:5px solid gold;
+border-radius:5px;
+}
+
+button{
+padding:10px 18px;
+margin-top:15px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX</h2>
+
+<div>
+
+<a href="dashboard.html">Dashboard</a>
+<a href="trade.html">Trade</a>
+<a href="deposit.html">Deposit</a>
+<a href="withdraw.html">Withdraw</a>
+<a href="history.html">History</a>
+<a href="profile.html">Profile</a>
+<a href="notifications.html">Notifications</a>
+<a href="login.html">Logout</a>
+
+</div>
+
+</nav>
+
+<div class="notifications">
+
+<h1>Notifications</h1>
+
+<div id="notificationList">
+
+</div>
+
+<button onclick="clearNotifications()">
+Clear Notifications
+</button>
+
+</div>
+
+<script>
+
+function loadNotifications(){
+
+let user=JSON.parse(localStorage.getItem("loggedUser"));
+
+if(!user)return;
+
+let notifications=JSON.parse(localStorage.getItem("notifications_"+user.email))||[];
+
+let list=document.getElementById("notificationList");
+
+list.innerHTML="";
+
+if(notifications.length===0){
+
+list.innerHTML="<p>No notifications.</p>";
+
+return;
+
+}
+
+notifications.reverse().forEach(function(n){
+
+list.innerHTML+=`
+<div class="notice">
+<strong>${n.date}</strong><br>
+${n.message}
+</div>
+`;
+
+});
+
+}
+
+function clearNotifications(){
+
+let user=JSON.parse(localStorage.getItem("loggedUser"));
+
+if(!user)return;
+
+localStorage.removeItem("notifications_"+user.email);
+
+loadNotifications();
+
+}
+
+loadNotifications();
+
+</script>
+
+</body>
+
+</html>

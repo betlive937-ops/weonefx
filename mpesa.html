@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Pesa Deposit - WeOneBet</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav>
+    <h2>WeOneBet</h2>
+
+    <div>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="deposit.html">Deposit</a>
+        <a href="withdraw.html">Withdraw</a>
+        <a href="login.html">Logout</a>
+    </div>
+</nav>
+
+<section class="hero">
+
+    <h1>M-Pesa Deposit</h1>
+
+    <p>Deposit funds securely using M-Pesa.</p>
+
+    <br>
+
+    <input type="text" id="phone" placeholder="Phone Number">
+
+    <br><br>
+
+    <input type="number" id="amount" placeholder="Deposit Amount">
+
+    <br><br>
+
+    <button onclick="payNow()">Pay Now</button>
+
+    <br><br>
+
+    <p id="message"></p>
+
+    <br>
+
+    <a href="deposit.html">
+        <button>Back</button>
+    </a>
+
+</section>
+
+<script>
+
+function payNow() {
+
+    const phone = document.getElementById("phone").value.trim();
+    const amount = Number(document.getElementById("amount").value);
+
+    if (phone === "" || amount <= 0 || isNaN(amount)) {
+        document.getElementById("message").innerHTML =
+        "Please enter a valid phone number and amount.";
+        return;
+    }
+
+    let balance = Number(localStorage.getItem("balance")) || 0;
+
+    balance += amount;
+
+    localStorage.setItem("balance", balance);
+
+    document.getElementById("message").innerHTML =
+    "✅ Payment successful! Redirecting to dashboard...";
+
+    setTimeout(function () {
+        location.replace("dashboard.html");
+    }, 2000);
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Payment Successful - WeOneFX</title>
+
+<style>
+
+body{
+    background:#111827;
+    color:white;
+    font-family:Arial,Helvetica,sans-serif;
+    text-align:center;
+    padding-top:80px;
+}
+
+.container{
+    width:500px;
+    max-width:90%;
+    margin:auto;
+    background:#1f2937;
+    padding:30px;
+    border-radius:12px;
+}
+
+h1{
+    color:#f4c542;
+}
+
+#status{
+    margin-top:25px;
+    font-size:18px;
+    word-wrap:break-word;
+}
+
+button{
+    margin-top:30px;
+    padding:12px 25px;
+    background:#f4c542;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:hover{
+    background:gold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>WeOneFX</h1>
+
+<h2>Payment Successful</h2>
+
+<p id="status">
+Verifying your payment...
+</p>
+
+<button onclick="window.location='dashboard.html'">
+Return to Dashboard
+</button>
+
+</div>
+
+<script>
+
+const params = new URLSearchParams(window.location.search);
+
+const trackingId =
+params.get("OrderTrackingId") ||
+params.get("orderTrackingId");
+
+const statusElement =
+document.getElementById("status");
+
+if(!trackingId){
+
+    statusElement.innerHTML =
+    "Payment completed but no Order Tracking ID was received.";
+
+}else{
+
+    fetch("http://localhost:3000/api/verify/" + trackingId)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        console.log(data);
+
+        if(data.payment_status_description){
+
+            statusElement.innerHTML =
+            "<h3>" + data.payment_status_description + "</h3><br><pre>" +
+            JSON.stringify(data,null,2) +
+            "</pre>";
+
+        }else{
+
+            statusElement.innerHTML =
+            "<pre>" +
+            JSON.stringify(data,null,2) +
+            "</pre>";
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.log(error);
+
+        statusElement.innerHTML =
+        "Unable to verify payment.";
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>

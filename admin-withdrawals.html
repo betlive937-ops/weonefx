@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin Withdrawals - WeOneFX</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid #444;
+padding:10px;
+text-align:center;
+}
+
+th{
+background:#FFD700;
+color:black;
+}
+
+button{
+padding:8px 15px;
+margin:3px;
+cursor:pointer;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav>
+
+<h2>WeOneFX Admin</h2>
+
+<div>
+<a href="admin.html">Dashboard</a>
+<a href="admin-deposits.html">Deposits</a>
+<a href="admin-withdrawals.html">Withdrawals</a>
+<a href="login.html">Logout</a>
+</div>
+
+</nav>
+
+<section class="hero">
+
+<h1>Withdrawal Requests</h1>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Name</th>
+<th>Email</th>
+<th>Phone</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="withdrawTable">
+
+</tbody>
+
+</table>
+
+</section>
+
+<script src="app.js"></script>
+
+<script>
+
+function loadWithdrawals(){
+
+let withdrawals=JSON.parse(localStorage.getItem("withdrawals"))||[];
+
+let table=document.getElementById("withdrawTable");
+
+table.innerHTML="";
+
+if(withdrawals.length===0){
+
+table.innerHTML="<tr><td colspan='6'>No withdrawal requests.</td></tr>";
+
+return;
+
+}
+
+withdrawals.forEach(function(w,index){
+
+table.innerHTML+=`
+<tr>
+<td>${w.fullName}</td>
+<td>${w.email}</td>
+<td>${w.phone}</td>
+<td>$${Number(w.amount).toFixed(2)}</td>
+<td>${w.status}</td>
+<td>
+<button onclick="approveWithdrawal(${index})">Approve</button>
+<button onclick="rejectWithdrawal(${index})">Reject</button>
+</td>
+</tr>
+`;
+
+});
+
+}
+
+function approveWithdrawal(index){
+
+let withdrawals=JSON.parse(localStorage.getItem("withdrawals"))||[];
+
+withdrawals[index].status="Approved";
+
+localStorage.setItem("withdrawals",JSON.stringify(withdrawals));
+
+addNotification(
+withdrawals[index].email,
+"✅ Your withdrawal of $"+Number(withdrawals[index].amount).toFixed(2)+" has been approved."
+);
+
+alert("Withdrawal approved successfully.");
+
+loadWithdrawals();
+
+}
+
+function rejectWithdrawal(index){
+
+let withdrawals=JSON.parse(localStorage.getItem("withdrawals"))||[];
+
+withdrawals[index].status="Rejected";
+
+localStorage.setItem("withdrawals",JSON.stringify(withdrawals));
+
+addNotification(
+withdrawals[index].email,
+"❌ Your withdrawal request has been rejected."
+);
+
+alert("Withdrawal rejected.");
+
+loadWithdrawals();
+
+}
+
+loadWithdrawals();
+
+</script>
+
+</body>
+
+</html>
