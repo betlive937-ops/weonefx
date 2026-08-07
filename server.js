@@ -1,46 +1,140 @@
 require("dotenv").config();
-
+const validator = require("validator");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const mysql = require("mysql2");
-
+const bcrypt = require("bcrypt");
 const app = express();
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+
+app.use(helmet());
 
 app.use(cors());
+
 app.use(express.json());
 
-app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/index.html");
+app.use(cookieParser());
+// ======================================
+// Rate Limiter
+// ======================================
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100,
+    message: {
+        success: false,
+        message: "Too many requests. Please try again later."
+    },
+    standardHeaders: true,
+    legacyHeaders: false
 });
 
+app.use("/api", apiLimiter);
 app.use(express.static(__dirname));
-
-// ======================================
-// MySQL Connection
-// ======================================
-const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-});
-
-db.connect((err) => {
-    if (err) {
-        console.log("❌ MySQL Error:", err);
-    } else {
-        console.log("✅ Connected to MySQL");
-    }
-});
 
 // ======================================
 // Home
 // ======================================
 app.get("/", (req, res) => {
-    res.send("✅ WeOneFX Backend Running");
+    res.sendFile(__dirname + "/index.html");
 });
 
+// =====================================
+// MySQL Connection
+// =====================================
+
+console.log("MYSQLHOST =", process.env.MYSQLHOST);
+console.log("MYSQLUSER =", process.env.MYSQLUSER);
+console.log("MYSQLDATABASE =", process.env.MYSQLDATABASE);
+console.log("MYSQLPORT =", process.env.MYSQLPORT);
+
+const db = mysql.createConnection({
+    host: process.env.MYSQLHOST,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error("❌ MySQL Connection Error:", err);
+        return;
+    }
+
+    console.log("✅ Connected to MySQL");
+});
+// ======================================
+// JWT Authentication Middleware
+// ======================================
+
+function authenticateToken(req, res, next) {
+
+    const authHeader = req.headers["authorization"];
+
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: "Access denied. Please log in."
+        });
+    }
+
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+
+        if (err) {
+            return res.status(403).json({
+                success: false,
+                message: "Invalid or expired token."
+            });
+        }
+
+
+        // Save logged-in user details
+        req.user = user;
+
+        next();
+
+    });
+
+}
+
+
+
+// ======================================
+// ADMIN AUTHORIZATION MIDDLEWARE
+// ======================================
+
+function requireAdmin(req, res, next) {
+
+    // Check if user exists
+    if (!req.user) {
+        return res.status(401).json({
+            success: false,
+            message: "Authentication required."
+        });
+    }
+
+
+    // Check user role
+    if (req.user.role !== "admin") {
+
+        return res.status(403).json({
+            success: false,
+            message: "Admin access required."
+        });
+
+    }
+
+
+    // Continue if admin
+    next();
+
+}
 // ======================================
 // Wallet Transaction Helper
 // ======================================
@@ -53,6 +147,7 @@ async function saveWalletTransaction(
     reference,
     status
 ) {
+
     return new Promise((resolve, reject) => {
 
         const sql = `
@@ -92,19 +187,58 @@ async function saveWalletTransaction(
         );
 
     });
+
 }
 
 // ======================================
 // Register User
 // ======================================
-app.post("/api/register", (req, res) => {
+app.post("/api/register", async (req, res) => {
 
     const { fullname, email, password } = req.body;
 
+   if (
+    !fullname ||
+    !email ||
+    !password
+) {
+    return res.status(400).json({
+        success: false,
+        message: "All fields are required."
+    });
+}
+
+if (!validator.isEmail(email)) {
+    return res.status(400).json({
+        success: false,
+        message: "Invalid email address."
+    });
+}
+
+if (fullname.length < 3 || fullname.length > 100) {
+    return res.status(400).json({
+        success: false,
+        message: "Full name must be between 3 and 100 characters."
+    });
+}
+
+if (!validator.isStrongPassword(password, {
+    minLength: 8,
+    minLowercase: 1,
+    minUppercase: 1,
+    minNumbers: 1,
+    minSymbols: 0
+})) {
+    return res.status(400).json({
+        success: false,
+        message: "Password must be at least 8 characters long and include uppercase, lowercase and a number."
+    });
+}
+const hashedPassword = await bcrypt.hash(password, 12);
     db.query(
-        "INSERT INTO users(fullname,email,password) VALUES(?,?,?)",
-        [fullname, email, password],
-        (err) => {
+        "SELECT id FROM users WHERE email=?",
+        [email],
+        (err, rows) => {
 
             if (err) {
                 return res.status(500).json({
@@ -113,52 +247,148 @@ app.post("/api/register", (req, res) => {
                 });
             }
 
-            res.json({
-                success: true,
-                message: "Registration successful."
-            });
+            if (rows.length > 0) {
+                return res.json({
+                    success: false,
+                    message: "Email already exists."
+                });
+            }
+
+            db.query(
+                "INSERT INTO users(fullname,email,password,balance) VALUES(?,?,?,0)",
+                [fullname, email, hashedPassword],
+                (err) => {
+
+                    if (err) {
+                        return res.status(500).json({
+                            success: false,
+                            error: err.message
+                        });
+                    }
+
+                    res.json({
+                        success: true,
+                        message: "Registration successful."
+                    });
+
+                }
+            );
 
         }
     );
 
 });
 
-// ======================================
-// Login User
-// ======================================
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
 
     const { email, password } = req.body;
 
+
     db.query(
-        "SELECT * FROM users WHERE email=? AND password=?",
-        [email, password],
-        (err, results) => {
+        "SELECT * FROM users WHERE email=?",
+        [email],
+        async (err, results) => {
+
 
             if (err) {
+
                 return res.status(500).json({
                     success: false,
                     error: err.message
                 });
+
             }
 
+
             if (results.length === 0) {
+
                 return res.json({
                     success: false,
                     message: "Invalid email or password."
                 });
+
             }
 
+
+            const user = results[0];
+
+
+            const passwordMatch = await bcrypt.compare(
+                password,
+                user.password
+            );
+
+
+            if (!passwordMatch) {
+
+                return res.json({
+                    success: false,
+                    message: "Invalid email or password."
+                });
+
+            }
+
+
+
+            // ======================================
+            // Generate JWT Token
+            // Including User Role
+            // ======================================
+
+            const token = jwt.sign(
+
+                {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role
+                },
+
+                process.env.JWT_SECRET,
+
+                {
+                    expiresIn: "7d"
+                }
+
+            );
+
+
+
+            // ======================================
+            // Send Login Response
+            // ======================================
+
             res.json({
+
                 success: true,
-                user: results[0]
+
+                message: "Login successful",
+
+                token: token,
+
+
+                user: {
+
+                    id: user.id,
+
+                    fullname: user.fullname,
+
+                    email: user.email,
+
+                    role: user.role,
+
+                    balance: user.balance
+
+                }
+
             });
 
+
         }
+
     );
 
-});
 
+});
 // ======================================
 // Get Pesapal Access Token
 // ======================================
@@ -166,17 +396,39 @@ app.get("/api/token", async (req, res) => {
 
     try {
 
+        console.log("🔑 Requesting Pesapal Token...");
+
         const response = await axios.post(
             "https://pay.pesapal.com/v3/api/Auth/RequestToken",
             {
                 consumer_key: process.env.PESAPAL_CONSUMER_KEY,
                 consumer_secret: process.env.PESAPAL_CONSUMER_SECRET
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
             }
         );
+
+        console.log("✅ Pesapal Token Received");
 
         res.json(response.data);
 
     } catch (error) {
+
+        console.error("❌ TOKEN ERROR");
+
+      if (error.response) {
+    console.error("=== PESAPAL ERROR ===");
+    console.error("Status:", error.response.status);
+    console.error("Headers:", error.response.headers);
+    console.error("Body:", error.response.data);
+    console.error("Message:", error.message);
+} else {
+    console.error(error.message);
+}
 
         res.status(500).json({
             success: false,
@@ -186,32 +438,70 @@ app.get("/api/token", async (req, res) => {
     }
 
 });
+
 // ======================================
 // Create Pesapal Payment
 // ======================================
 app.post("/api/pay", async (req, res) => {
+console.log("🔥 /api/pay route was called");
+    console.log("==================================");
+    console.log("💰 NEW DEPOSIT REQUEST");
+    console.log(req.body);
+    console.log("==================================");
 
     try {
 
-        const { amount, currency, name, email, phone } = req.body;
+        const {
+            amount,
+            currency,
+            name,
+            email,
+            phone
+        } = req.body;
 
-        // Get Pesapal Access Token
+        // =============================
+        // Get Access Token
+        // =============================
         const auth = await axios.post(
             "https://pay.pesapal.com/v3/api/Auth/RequestToken",
             {
                 consumer_key: process.env.PESAPAL_CONSUMER_KEY,
                 consumer_secret: process.env.PESAPAL_CONSUMER_SECRET
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json"
+                }
             }
         );
 
+        console.log("✅ TOKEN RESPONSE");
+        console.log(auth.data);
+
         const token = auth.data.token;
+
+        if (!token) {
+
+            return res.status(500).json({
+                success: false,
+                message: "Failed to obtain Pesapal token."
+            });
+
+        }
 
         const merchantReference = "WOFX-" + Date.now();
 
-        // Save pending transaction
+        // Save Pending Transaction
         db.query(
             `INSERT INTO transactions
-            (merchant_reference,email,amount,currency,status)
+            (
+                merchant_reference,
+                email,
+                amount,
+                currency,
+                status
+            )
             VALUES (?,?,?,?,?)`,
             [
                 merchantReference,
@@ -221,9 +511,12 @@ app.post("/api/pay", async (req, res) => {
                 "PENDING"
             ],
             (err) => {
+
                 if (err) {
-                    console.log("Transaction Save Error:", err.message);
+                    console.error("Transaction Insert Error");
+                    console.error(err);
                 }
+
             }
         );
 
@@ -237,19 +530,28 @@ app.post("/api/pay", async (req, res) => {
 
             description: "WeOneFX Wallet Deposit",
 
-           callback_url: "https://truthful-motivation-production-2515.up.railway.app/payment-success.html",
+            callback_url:
+                "https://truthful-motivation-production-2515.up.railway.app/payment-success.html",
 
             notification_id: process.env.PESAPAL_IPN_ID,
 
             billing_address: {
+
                 email_address: email,
+
                 phone_number: phone,
+
                 country_code: "KE",
+
                 first_name: name,
+
                 last_name: "Customer"
+
             }
 
         };
+
+        console.log("📦 Sending Order To Pesapal");
 
         const payment = await axios.post(
             "https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest",
@@ -263,11 +565,25 @@ app.post("/api/pay", async (req, res) => {
             }
         );
 
+        console.log("✅ PAYMENT CREATED");
+        console.log(payment.data);
+
         res.json(payment.data);
 
     } catch (error) {
 
-        console.log(error.response?.data || error.message);
+        console.error("❌ PAYMENT ERROR");
+
+        if (error.response) {
+
+            console.error("Status:", error.response.status);
+            console.error(error.response.data);
+
+        } else {
+
+            console.error(error.message);
+
+        }
 
         res.status(500).json({
             success: false,
@@ -293,18 +609,24 @@ app.post("/api/confirm-payment", async (req, res) => {
 
     try {
 
-        // Get Pesapal token
+        // Get Pesapal Token
         const auth = await axios.post(
             "https://pay.pesapal.com/v3/api/Auth/RequestToken",
             {
                 consumer_key: process.env.PESAPAL_CONSUMER_KEY,
                 consumer_secret: process.env.PESAPAL_CONSUMER_SECRET
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
             }
         );
 
         const token = auth.data.token;
 
-        // Check payment status
+        // Get Payment Status
         const statusResponse = await axios.get(
             `https://pay.pesapal.com/v3/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
             {
@@ -318,10 +640,12 @@ app.post("/api/confirm-payment", async (req, res) => {
         const payment = statusResponse.data;
 
         if (payment.payment_status_description !== "Completed") {
+
             return res.json({
                 success: false,
                 payment
             });
+
         }
 
         db.query(
@@ -330,39 +654,47 @@ app.post("/api/confirm-payment", async (req, res) => {
             (err, transactionRows) => {
 
                 if (err) {
+
                     return res.status(500).json({
                         success: false,
                         error: err.message
                     });
+
                 }
 
                 if (
                     transactionRows.length > 0 &&
                     transactionRows[0].status === "COMPLETED"
                 ) {
+
                     return res.json({
                         success: true,
                         message: "Payment already credited."
                     });
+
                 }
 
                 db.query(
-                    "SELECT id, balance FROM users WHERE email=?",
+                    "SELECT id,balance FROM users WHERE email=?",
                     [email],
                     async (err, userRows) => {
 
                         if (err) {
+
                             return res.status(500).json({
                                 success: false,
                                 error: err.message
                             });
+
                         }
 
                         if (userRows.length === 0) {
+
                             return res.status(404).json({
                                 success: false,
                                 message: "User not found."
                             });
+
                         }
 
                         const userId = userRows[0].id;
@@ -376,67 +708,72 @@ app.post("/api/confirm-payment", async (req, res) => {
                             async (updateErr) => {
 
                                 if (updateErr) {
+
                                     return res.status(500).json({
                                         success: false,
                                         error: updateErr.message
                                     });
+
                                 }
 
-                               
-db.query(
-    `UPDATE transactions
-     SET order_tracking_id=?, status='COMPLETED'
-     WHERE email=?`,
-    [orderTrackingId, email],
-    async (transErr) => {
+                                db.query(
+                                    `UPDATE transactions
+                                     SET order_tracking_id=?, status='COMPLETED'
+                                     WHERE email=?`,
+                                    [orderTrackingId, email],
+                                    async (transErr) => {
 
-        if (transErr) {
-            return res.status(500).json({
-                success: false,
-                error: transErr.message
-            });
-        }
+                                        if (transErr) {
 
-        try {
+                                            return res.status(500).json({
+                                                success: false,
+                                                error: transErr.message
+                                            });
 
-            await saveWalletTransaction(
-                userId,
-                "deposit",
-                depositAmount,
-                payment.currency,
-                "Pesapal",
-                orderTrackingId,
-                "Completed"
-            );
+                                        }
 
-            return res.json({
-                success: true,
-                message: "Wallet credited successfully.",
-                balance: newBalance
-            });
+                                        try {
 
-        } catch (walletErr) {
+                                            await saveWalletTransaction(
+                                                userId,
+                                                "deposit",
+                                                depositAmount,
+                                                payment.currency,
+                                                "Pesapal",
+                                                orderTrackingId,
+                                                "Completed"
+                                            );
 
-            return res.status(500).json({
-                success: false,
-                error: walletErr.message
-            });
+                                            return res.json({
+                                                success: true,
+                                                message: "Wallet credited successfully.",
+                                                balance: newBalance
+                                            });
 
-        }
+                                        } catch (walletErr) {
 
-    }
-);
+                                            return res.status(500).json({
+                                                success: false,
+                                                error: walletErr.message
+                                            });
+
+                                        }
+
+                                    }
+                                );
+
+                            }
+                        );
 
                     }
                 );
+
             }
         );
-    }
-);
 
-} catch (err) {
+    } catch (err) {
 
-        console.log(err.response?.data || err.message);
+        console.error(err.response?.data || err.message);
 
         return res.status(500).json({
             success: false,
@@ -446,12 +783,14 @@ db.query(
     }
 
 });
-
 // ======================================
 // Start Server
 // ======================================
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
+
     console.log(`🚀 WeOneFX running on port ${PORT}`);
+
 });
