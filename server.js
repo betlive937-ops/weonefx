@@ -875,6 +875,9 @@ app.post("/api/confirm-payment", async (req, res) => {
 app.get("/", (req, res) => {
     res.send("WeOneFX Server is running");
 });
+app.get("/", (req, res) => {
+    res.status(200).send("WeOneFX is alive");
+});
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {
