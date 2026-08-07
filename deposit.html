@@ -87,13 +87,16 @@ button:hover{
 
 </head>
 
+
 <body>
+
 
 <nav>
 
 <h2>WeOneFX</h2>
 
 <div>
+
 <a href="dashboard.html">Dashboard</a>
 <a href="deposit.html">Deposit</a>
 <a href="withdraw.html">Withdraw</a>
@@ -101,46 +104,62 @@ button:hover{
 <a href="history.html">History</a>
 <a href="profile.html">Profile</a>
 <a href="login.html">Logout</a>
+
 </div>
 
 </nav>
 
+
 <section class="hero">
 
+
 <h1>Deposit Funds</h1>
+
 
 <h3>
 Balance: KES <span id="balance">0.00</span>
 </h3>
+
 
 <input
 type="text"
 id="phone"
 placeholder="2547XXXXXXXX">
 
+
 <input
 type="number"
 id="amount"
 placeholder="KES 500 - 250000">
 
+
 <button onclick="requestDeposit()">
+
 💳 Deposit via Pesapal
+
 </button>
+
 
 <p id="message"></p>
 
+
 <hr style="margin:35px 0;">
 
+
 <h2>Deposit with USDT (BEP20)</h2>
+
 
 <p>
 Send your USDT using the
 <b>BNB Smart Chain (BEP20)</b> network only.
 </p>
 
+
 <div class="walletBox">
 
+
 <h3>Wallet Address</h3>
+
 
 <input
 type="text"
@@ -149,8 +168,11 @@ value="0x1a81d4765c26f932726d345dbe0cf08d000cb628"
 readonly>
 
 <button onclick="copyWallet()">
+
 📋 Copy Wallet Address
+
 </button>
+
 
 <p>
 
@@ -162,157 +184,332 @@ readonly>
 
 </p>
 
+
 </div>
 
+
 <br>
+
 
 <input
 type="text"
 id="txid"
 placeholder="Paste Transaction Hash (TXID)">
 
+
 <button onclick="submitCryptoDeposit()">
+
 ✅ I Have Paid
+
 </button>
+
 
 <p id="cryptoMessage"></p>
 
-<script src="app.js"></script>
 
+<script src="app.js"></script>
 <script>
+
 
 showBalance("balance");
 
-async function requestDeposit() {    const phone = document.getElementById("phone").value.trim();
-    const amount = Number(document.getElementById("amount").value);
+
+
+// ======================================
+// PESAPAL DEPOSIT
+// ======================================
+
+async function requestDeposit(){
+
+
+    const phone = document.getElementById("phone").value.trim();
+
+    const amount = Number(
+        document.getElementById("amount").value
+    );
+
     const message = document.getElementById("message");
 
-    if (!phone) {
-        message.innerHTML = "Please enter your phone number.";
+
+
+    if(phone === ""){
+
+        message.innerHTML =
+        "Please enter your phone number.";
+
         return;
+
     }
 
-    if (!amount || amount < 500) {
-        message.innerHTML = "Minimum deposit is KES 500.";
+
+
+    if(!amount || amount < 500){
+
+        message.innerHTML =
+        "Minimum deposit is KES 500.";
+
         return;
+
     }
 
-    if (amount > 250000) {
-        message.innerHTML = "Maximum deposit is KES 250,000.";
+
+
+    if(amount > 250000){
+
+        message.innerHTML =
+        "Maximum deposit is KES 250,000.";
+
         return;
+
     }
+
+
 
     const currentUser = getLoggedUser();
 
-    if (!currentUser) {
+
+
+    if(!currentUser){
+
         alert("Please login first.");
-        window.location.href = "login.html";
+
+        window.location.href="login.html";
+
         return;
+
     }
 
-    message.innerHTML = "Creating Pesapal payment...";
 
-    try {
 
-        const response = await fetch("/api/pay", {
+    message.innerHTML =
+    "Creating Pesapal payment...";
 
-            method: "POST",
 
-            headers: {
-                "Content-Type": "application/json"
-            },
 
-            body: JSON.stringify({
+    try{
 
-                amount: amount,
-                currency: "KES",
-                phone: phone,
-                name: currentUser.fullname || currentUser.fullName,
-                email: currentUser.email
 
-            })
+        const response = await fetch(
+            "/api/pay",
+            {
 
-        });
+                method:"POST",
+
+                headers:{
+
+                    "Content-Type":"application/json"
+
+                },
+
+
+                body:JSON.stringify({
+
+                    amount:amount,
+
+                    currency:"KES",
+
+                    phone:phone,
+
+                    name:
+                    currentUser.fullname ||
+                    currentUser.fullName,
+
+                    email:
+                    currentUser.email
+
+                })
+
+            }
+        );
+
+
 
         const data = await response.json();
 
-        console.log("Pesapal Response:", data);
 
-        if (data.redirect_url) {
-            window.location.href = data.redirect_url;
+
+        console.log(
+            "Pesapal Response:",
+            data
+        );
+
+
+
+        if(data.redirect_url){
+
+            window.location.href =
+            data.redirect_url;
+
             return;
+
         }
 
-        if (data.redirectUrl) {
-            window.location.href = data.redirectUrl;
+
+
+        if(data.redirectUrl){
+
+            window.location.href =
+            data.redirectUrl;
+
             return;
+
         }
 
-        message.innerHTML =
-            JSON.stringify(data, null, 2);
 
-    } catch (error) {
-
-        console.error("FETCH ERROR:", error);
 
         message.innerHTML =
-            "Connection Error:<br>" + error.message;
+        JSON.stringify(
+            data,
+            null,
+            2
+        );
+
+
+
+    }catch(error){
+
+
+        console.error(
+            "FETCH ERROR:",
+            error
+        );
+
+
+        message.innerHTML =
+        "Connection Error:<br>" +
+        error.message;
+
 
     }
 
-}
-function copyWallet() {
 
-    const wallet = document.getElementById("walletAddress");
+}
+
+
+
+
+
+
+// ======================================
+// COPY WALLET ADDRESS
+// ======================================
+
+
+function copyWallet(){
+
+
+    const wallet =
+    document.getElementById(
+        "walletAddress"
+    );
+
 
     wallet.select();
-    wallet.setSelectionRange(0, 99999);
 
-    navigator.clipboard.writeText(wallet.value);
+    wallet.setSelectionRange(
+        0,
+        99999
+    );
 
-    document.getElementById("cryptoMessage").innerHTML =
-        "✅ Wallet address copied.";
+
+
+    navigator.clipboard.writeText(
+        wallet.value
+    );
+
+
+
+    document.getElementById(
+        "cryptoMessage"
+    ).innerHTML =
+    "✅ Wallet address copied.";
+
 
 }
+// ======================================
+// CRYPTO DEPOSIT SUBMISSION
+// ======================================
 
-function submitCryptoDeposit() {
 
-    const txid = document.getElementById("txid").value.trim();
+function submitCryptoDeposit(){
 
-    if (txid === "") {
 
-        alert("Please paste your Transaction Hash (TXID).");
+    const txid =
+    document.getElementById("txid")
+    .value
+    .trim();
+
+
+
+    if(txid === ""){
+
+
+        alert(
+            "Please paste your Transaction Hash (TXID)."
+        );
+
+
         return;
 
+
     }
+
+
 
     const depositData = {
 
-        wallet: "0x1a81d4765c26f932726d345dbe0cf08d000cb628",
+
+        wallet:
+        "0x1a81d4765c26f932726d345dbe0cf08d000cb628",
+
 
         txid: txid,
 
-        status: "Pending Verification",
 
-        date: new Date().toLocaleString()
+        status:
+        "Pending Verification",
+
+
+        date:
+        new Date().toLocaleString()
+
 
     };
 
+
+
     localStorage.setItem(
+
         "cryptoDeposit",
+
         JSON.stringify(depositData)
+
     );
 
-    document.getElementById("cryptoMessage").innerHTML =
-        "✅ Your crypto deposit request has been submitted and is awaiting verification.";
+
+
+    document.getElementById(
+        "cryptoMessage"
+    ).innerHTML =
+
+    "✅ Your crypto deposit request has been submitted and is awaiting verification.";
+
+
 
 }
 
+
+
 </script>
+
+
 
 <br><br>
 
+
+
 <a href="dashboard.html">
+
 
 <button>
 
@@ -320,10 +517,16 @@ function submitCryptoDeposit() {
 
 </button>
 
+
 </a>
+
+
 
 </section>
 
+
+
 </body>
+
 
 </html>
