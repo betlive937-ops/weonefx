@@ -1,77 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - WeOneBet</title>
+<title>Login - WeOneFX</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <nav>
-<h2>WeOneBet</h2>
+    <h2>WeOneFX</h2>
 </nav>
 
 <section class="hero">
 
-<h1>Login</h1>
+    <h1>Login</h1>
 
-<input type="email" id="email" placeholder="Email"><br><br>
+    <input
+        type="email"
+        id="email"
+        placeholder="Email"
+        required
+    >
 
-<input type="password" id="password" placeholder="Password"><br><br>
+    <br><br>
 
-<button onclick="login()">Login</button>
+    <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        required
+    >
 
-<p>Don't have an account?
-<a href="register.html">Register</a>
-</p>
+    <br><br>
+
+    <button onclick="login()">
+        Login
+    </button>
+
+    <p>
+        Don't have an account?
+        <a href="register.html">Register</a>
+    </p>
 
 </section>
 
 <script>
 
-function login(){
+async function login(){
 
-let email=document.getElementById("email").value.trim();
-let password=document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
 
-let users=JSON.parse(localStorage.getItem("users")) || [];
+    if(!email || !password){
 
-let user=users.find(function(u){
-    return u.email===email && u.password===password;
-});
+        alert("Please enter your email and password.");
 
-if(user){
-    if(user.frozen){
+        return;
 
-    alert("Your account has been frozen. Please contact support.");
+    }
 
-    return;
+    try{
 
-}
-if(user.frozen){
+        const response = await fetch("/api/login",{
 
-    alert("Your account has been frozen. Please contact support.");
+            method:"POST",
 
-    return;
+            headers:{
+                "Content-Type":"application/json"
+            },
 
-}
-    localStorage.setItem("loggedUser",JSON.stringify(user));
+            body:JSON.stringify({
 
-    alert("Login successful!");
+                email:email,
+                password:password
 
-    window.location.href="dashboard.html";
+            })
 
-}else{
+        });
 
-    alert("Invalid email or password.");
+        const data = await response.json();
 
-}
+        if(!data.success){
+
+            alert(data.message);
+
+            return;
+
+        }
+
+        // Save JWT Token
+        localStorage.setItem("token", data.token);
+
+        // Save Logged User
+        localStorage.setItem("loggedUser", JSON.stringify(data.user));
+
+        alert("Login successful!");
+
+        window.location.href="dashboard.html";
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        alert("Unable to connect to server.");
+
+    }
 
 }
 
 </script>
 
 </body>
+
 </html>
