@@ -46,10 +46,10 @@ app.get("/", (req, res) => {
 // MySQL Connection
 // =====================================
 
-console.log("MYSQLHOST =", process.env.MYSQLHOST);
-console.log("MYSQLUSER =", process.env.MYSQLUSER);
-console.log("MYSQLDATABASE =", process.env.MYSQLDATABASE);
-console.log("MYSQLPORT =", process.env.MYSQLPORT);
+console.log("DB_HOST =", process.env.DB_HOST);
+console.log("DB_USER =", process.env.DB_USER);
+console.log("DB_NAME =", process.env.DB_NAME);
+console.log("DB_PORT =", process.env.DB_PORT);
 
 const db = mysql.createConnection({
 
@@ -59,7 +59,7 @@ const db = mysql.createConnection({
 
     password: process.env.DB_PASSWORD,
 
-    database: process.env.DB_DATABASE,
+    database: process.env.DB_NAME,
 
     port: process.env.DB_PORT
 
