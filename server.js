@@ -11,26 +11,25 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const validator = require("validator");
 
+const path = require("path");
+
 const app = express();
 
 
-// Security middleware
+// ================================
+// Middleware
+// ================================
+
 app.use(helmet());
 
-
-// Allow requests
 app.use(cors());
 
-
-// Read JSON data
 app.use(express.json());
 
-
-// Read form data
 app.use(express.urlencoded({ extended: true }));
 
 
-// Serve HTML/CSS/JS files
+// Serve frontend files
 app.use(express.static(__dirname));
 
 
@@ -38,14 +37,21 @@ app.use(express.static(__dirname));
 app.use(cookieParser());
 
 
-// Rate limiting
+// Rate limiter
 const limiter = rateLimit({
+
     windowMs: 15 * 60 * 1000,
-    max: 100
+
+    max: 100,
+
+    message: {
+        success: false,
+        message: "Too many requests, try again later."
+    }
+
 });
 
 app.use(limiter);
-
 // ======================================
 // Home
 // ======================================
@@ -816,7 +822,9 @@ app.post("/api/confirm-payment", async (req, res) => {
 // ======================================
 // Start Server
 // ======================================
-
+app.get("/", (req, res) => {
+    res.send("WeOneFX Server is running");
+});
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {
