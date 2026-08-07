@@ -68,6 +68,7 @@ console.log("DB_USER =", process.env.DB_USER);
 console.log("DB_NAME =", process.env.DB_NAME);
 console.log("DB_PORT =", process.env.DB_PORT);
 
+
 const db = mysql.createPool({
 
     host: process.env.DB_HOST,
@@ -78,28 +79,77 @@ const db = mysql.createPool({
 
     database: process.env.DB_NAME,
 
-    port: process.env.DB_PORT,
+    port: Number(process.env.DB_PORT),
 
     waitForConnections: true,
 
     connectionLimit: 10,
 
-    queueLimit: 0
+    maxIdle: 10,
+
+    idleTimeout: 60000,
+
+    queueLimit: 0,
+
+    enableKeepAlive: true,
+
+    keepAliveInitialDelay: 0
 
 });
+
+
+// Test MySQL Connection
+
 db.getConnection((err, connection) => {
 
     if (err) {
 
-        console.error("❌ MySQL Connection Error:", err);
+        console.error(
+            "❌ MySQL Connection Error:",
+            err.message
+        );
 
-    } else {
-
-        console.log("✅ Connected to MySQL");
-
-        connection.release();
+        return;
 
     }
+
+
+    console.log("✅ Connected to MySQL");
+
+
+    connection.ping((pingErr) => {
+
+        if (pingErr) {
+
+            console.error(
+                "❌ MySQL Ping Failed:",
+                pingErr.message
+            );
+
+        } else {
+
+            console.log(
+                "✅ MySQL Ping Successful"
+            );
+
+        }
+
+    });
+
+
+    connection.release();
+
+});
+
+
+// Handle MySQL errors
+
+db.on("error", (err) => {
+
+    console.error(
+        "❌ MySQL Pool Error:",
+        err.message
+    );
 
 });
 // ======================================
