@@ -1,39 +1,50 @@
 require("dotenv").config();
-const validator = require("validator");
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
+
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const mysql = require("mysql2");
 const bcrypt = require("bcrypt");
-const app = express();
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const validator = require("validator");
 
+const app = express();
+
+
+// Security middleware
 app.use(helmet());
 
+
+// Allow requests
 app.use(cors());
 
+
+// Read JSON data
 app.use(express.json());
 
+
+// Read form data
+app.use(express.urlencoded({ extended: true }));
+
+
+// Serve HTML/CSS/JS files
+app.use(express.static(__dirname));
+
+
+// Cookies
 app.use(cookieParser());
-// ======================================
-// Rate Limiter
-// ======================================
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
-    message: {
-        success: false,
-        message: "Too many requests. Please try again later."
-    },
-    standardHeaders: true,
-    legacyHeaders: false
+
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100
 });
 
-app.use("/api", apiLimiter);
-app.use(express.static(__dirname));
+app.use(limiter);
 
 // ======================================
 // Home
