@@ -14,7 +14,6 @@ const validator = require("validator");
 const path = require("path");
 
 const app = express();
-const app = express();
 
 // Railway runs behind a reverse proxy
 app.set("trust proxy", 1);
@@ -531,14 +530,21 @@ app.get("/api/token", async (req, res) => {
 // ======================================
 // Create Pesapal Payment
 // ======================================
+
 app.post("/api/pay", async (req, res) => {
-console.log("🔥 /api/pay route was called");
+
+    console.log("🔥 /api/pay route was called");
+
     console.log("==================================");
     console.log("💰 NEW DEPOSIT REQUEST");
-    console.log(req.body);
     console.log("==================================");
 
+
     try {
+
+        // ======================================
+        // Get request data
+        // ======================================
 
         const {
             amount,
@@ -548,41 +554,184 @@ console.log("🔥 /api/pay route was called");
             phone
         } = req.body;
 
-        // =============================
-        // Get Access Token
-        // =============================
-        const auth = await axios.post(
-            "https://pay.pesapal.com/v3/api/Auth/RequestToken",
-            {
-                consumer_key: process.env.PESAPAL_CONSUMER_KEY,
-                consumer_secret: process.env.PESAPAL_CONSUMER_SECRET
-            },
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json"
-                }
-            }
-        );
 
-        console.log("✅ TOKEN RESPONSE");
-        console.log(auth.data);
+        console.log("Amount:", amount);
+        console.log("Currency:", currency);
+        console.log("Email:", email);
 
-        const token = auth.data.token;
 
-        if (!token) {
+        // ======================================
+        // Validate request
+        // ======================================
 
-            return res.status(500).json({
+        if (!amount || Number(amount) < 500) {
+
+            return res.status(400).json({
+
                 success: false,
-                message: "Failed to obtain Pesapal token."
+
+                message:
+                    "Minimum deposit is KES 500."
+
             });
 
         }
 
-        const merchantReference = "WOFX-" + Date.now();
 
-        // Save Pending Transaction
+        if (Number(amount) > 250000) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Maximum deposit is KES 250,000."
+
+            });
+
+        }
+
+
+        if (!email) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Email is required."
+
+            });
+
+        }
+
+
+        if (!phone) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "Phone number is required."
+
+            });
+
+        }
+
+
+        // ======================================
+        // Check Pesapal credentials
+        // ======================================
+
+        if (
+            !process.env.PESAPAL_CONSUMER_KEY ||
+            !process.env.PESAPAL_CONSUMER_SECRET
+        ) {
+
+            console.error(
+                "❌ Pesapal credentials are missing."
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Pesapal is not configured on the server."
+
+            });
+
+        }
+
+
+        // ======================================
+        // Get Pesapal Access Token
+        // ======================================
+
+        console.log(
+            "🔐 Requesting Pesapal access token..."
+        );
+
+
+        const auth = await axios.post(
+
+            "https://pay.pesapal.com/v3/api/Auth/RequestToken",
+
+            {
+
+                consumer_key:
+                    process.env.PESAPAL_CONSUMER_KEY,
+
+                consumer_secret:
+                    process.env.PESAPAL_CONSUMER_SECRET
+
+            },
+
+            {
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json",
+
+                    Accept:
+                        "application/json"
+
+                },
+
+                timeout: 30000
+
+            }
+
+        );
+
+
+        const token =
+            auth.data?.token;
+
+
+        if (!token) {
+
+            console.error(
+                "❌ Pesapal did not return a token."
+            );
+
+            console.error(
+                auth.data
+            );
+
+            return res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Failed to obtain Pesapal access token."
+
+            });
+
+        }
+
+
+        console.log(
+            "✅ Pesapal token received."
+        );
+
+
+        // ======================================
+        // Create merchant reference
+        // ======================================
+
+        const merchantReference =
+            "WOFX-" + Date.now();
+
+
+        // ======================================
+        // Save pending transaction
+        // ======================================
+
         db.query(
+
             `INSERT INTO transactions
             (
                 merchant_reference,
@@ -592,91 +741,226 @@ console.log("🔥 /api/pay route was called");
                 status
             )
             VALUES (?,?,?,?,?)`,
+
             [
+
                 merchantReference,
-                email,
-                amount,
-                currency,
+
+                email.trim().toLowerCase(),
+
+                Number(amount),
+
+                currency || "KES",
+
                 "PENDING"
+
             ],
+
             (err) => {
 
                 if (err) {
-                    console.error("Transaction Insert Error");
-                    console.error(err);
+
+                    console.error(
+                        "❌ Transaction Insert Error:",
+                        err
+                    );
+
+                    // We continue because the
+                    // Pesapal request can still be
+                    // processed and logged.
+
+                } else {
+
+                    console.log(
+                        "✅ Pending transaction saved:",
+                        merchantReference
+                    );
+
                 }
 
             }
+
         );
+
+
+        // ======================================
+        // Pesapal Order
+        // ======================================
 
         const order = {
 
-            id: merchantReference,
+            id:
+                merchantReference,
 
-            currency: currency,
+            currency:
+                currency || "KES",
 
-            amount: Number(amount),
+            amount:
+                Number(amount),
 
-            description: "WeOneFX Wallet Deposit",
+            description:
+                "WeOneFX Wallet Deposit",
 
             callback_url:
                 "https://truthful-motivation-production-2515.up.railway.app/payment-success.html",
 
-            notification_id: process.env.PESAPAL_IPN_ID,
+            notification_id:
+                process.env.PESAPAL_IPN_ID,
 
             billing_address: {
 
-                email_address: email,
+                email_address:
+                    email.trim().toLowerCase(),
 
-                phone_number: phone,
+                phone_number:
+                    phone,
 
-                country_code: "KE",
+                country_code:
+                    "KE",
 
-                first_name: name,
+                first_name:
+                    name || "WeOneFX",
 
-                last_name: "Customer"
+                last_name:
+                    "Customer"
 
             }
 
         };
 
-        console.log("📦 Sending Order To Pesapal");
 
-        const payment = await axios.post(
-            "https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest",
-            order,
-            {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                    Accept: "application/json"
-                }
-            }
+        console.log(
+            "📦 Sending order to Pesapal..."
         );
 
-        console.log("✅ PAYMENT CREATED");
-        console.log(payment.data);
 
-        res.json(payment.data);
+        // ======================================
+        // Submit Pesapal Order
+        // ======================================
+
+        const payment = await axios.post(
+
+            "https://pay.pesapal.com/v3/api/Transactions/SubmitOrderRequest",
+
+            order,
+
+            {
+
+                headers: {
+
+                    Authorization:
+                        `Bearer ${token}`,
+
+                    "Content-Type":
+                        "application/json",
+
+                    Accept:
+                        "application/json"
+
+                },
+
+                timeout: 30000
+
+            }
+
+        );
+
+
+        console.log(
+            "✅ PESAPAL PAYMENT CREATED"
+        );
+
+        console.log(
+            "Merchant Reference:",
+            merchantReference
+        );
+
+        console.log(
+            "Pesapal Response:",
+            payment.data
+        );
+
+
+        // ======================================
+        // Send response to frontend
+        // ======================================
+
+        return res.json({
+
+            success: true,
+
+            merchant_reference:
+                merchantReference,
+
+            payment:
+                payment.data,
+
+            redirect_url:
+                payment.data?.redirect_url ||
+                payment.data?.redirectUrl ||
+                null
+
+        });
+
 
     } catch (error) {
 
-        console.error("❌ PAYMENT ERROR");
+        // ======================================
+        // Payment Error
+        // ======================================
+
+        console.error(
+            "❌ PESAPAL PAYMENT ERROR"
+        );
+
 
         if (error.response) {
 
-            console.error("Status:", error.response.status);
-            console.error(error.response.data);
+            console.error(
+                "HTTP Status:",
+                error.response.status
+            );
 
-        } else {
+            console.error(
+                "Pesapal Error:",
+                error.response.data
+            );
 
-            console.error(error.message);
+
+            return res.status(
+                error.response.status >= 400
+                    ? 500
+                    : 500
+            ).json({
+
+                success: false,
+
+                message:
+                    "Pesapal payment request failed.",
+
+                error:
+                    error.response.data
+
+            });
 
         }
 
-        res.status(500).json({
+
+        console.error(
+            error.message
+        );
+
+
+        return res.status(500).json({
+
             success: false,
-            error: error.response?.data || error.message
+
+            message:
+                "Unable to create Pesapal payment.",
+
+            error:
+                error.message
+
         });
 
     }
