@@ -14,7 +14,10 @@ const validator = require("validator");
 const path = require("path");
 
 const app = express();
+const app = express();
 
+// Railway runs behind a reverse proxy
+app.set("trust proxy", 1);
 
 // ================================
 // Middleware
