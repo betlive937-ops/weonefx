@@ -1,202 +1,87 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Login - WeOneFX</title>
 
-<link rel="stylesheet" href="style.css">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-</head><body><nav>
+    <title>Login - WeOneFX</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<nav>
+
     <h2>WeOneFX</h2>
-</nav><section class="hero"><h1>Login</h1>
 
-<input
-    type="email"
-    id="email"
-    placeholder="Email"
-    autocomplete="email"
-    required
->
+</nav>
 
-<br><br>
 
-<input
-    type="password"
-    id="password"
-    placeholder="Password"
-    autocomplete="current-password"
-    required
->
+<section class="hero">
 
-<br><br>
+    <h1>Login</h1>
 
-<button
-    type="button"
-    id="loginButton"
-    onclick="login()"
->
-    Login
-</button>
 
-<p id="loginMessage"></p>
+    <input
+        type="email"
+        id="email"
+        placeholder="Email"
+        autocomplete="email"
+        required
+    >
 
-<p>
-    Don't have an account?
-    <a href="register.html">Register</a>
-</p>
 
-</section><script>
+    <br><br>
 
-// ======================================
-// WeOneFX Backend
-// ======================================
 
-const API_URL = "https://weonefx-production.up.railway.app";
+    <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        autocomplete="current-password"
+        required
+    >
 
 
-// ======================================
-// Login
-// ======================================
+    <br><br>
 
-async function login() {
 
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const loginButton = document.getElementById("loginButton");
-    const loginMessage = document.getElementById("loginMessage");
+    <button
+        type="button"
+        id="loginButton"
+    >
+        Login
+    </button>
 
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
 
-    loginMessage.innerHTML = "";
+    <p id="loginMessage"></p>
 
 
-    // Validate fields
+    <p>
 
-    if (!email || !password) {
+        Don't have an account?
 
-        loginMessage.innerHTML =
-            "Please enter your email and password.";
+        <a href="register.html">
+            Register
+        </a>
 
-        return;
-    }
+    </p>
 
+</section>
 
-    loginButton.disabled = true;
-    loginButton.innerText = "Logging in...";
 
+<!-- Login JavaScript -->
+<script src="login.js" defer></script>
 
-    try {
 
-        const response = await fetch(
-            API_URL + "/api/login",
-            {
-                method: "POST",
+</body>
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
-            }
-        );
-
-
-        // Check HTTP response
-
-        if (!response.ok) {
-
-            throw new Error(
-                "Server returned HTTP " + response.status
-            );
-
-        }
-
-
-        const data = await response.json();
-
-        console.log("Login response:", data);
-
-
-        // Login failed
-
-        if (!data.success) {
-
-            loginMessage.innerHTML =
-                data.message || "Invalid email or password.";
-
-            loginButton.disabled = false;
-            loginButton.innerText = "Login";
-
-            return;
-        }
-
-
-        // ======================================
-        // Save JWT
-        // ======================================
-
-        if (!data.token) {
-
-            throw new Error(
-                "Login succeeded but no JWT token was returned."
-            );
-
-        }
-
-        localStorage.setItem(
-            "token",
-            data.token
-        );
-
-
-        // ======================================
-        // Save logged-in user
-        // ======================================
-
-        if (data.user) {
-
-            localStorage.setItem(
-                "loggedUser",
-                JSON.stringify(data.user)
-            );
-
-        }
-
-
-        loginMessage.innerHTML =
-            "✅ Login successful. Redirecting...";
-
-
-        // Redirect
-
-        setTimeout(() => {
-
-            window.location.href =
-                "dashboard.html";
-
-        }, 500);
-
-
-    } catch (error) {
-
-        console.error(
-            "LOGIN ERROR:",
-            error
-        );
-
-
-        loginMessage.innerHTML =
-            "❌ Unable to connect to the WeOneFX server.";
-
-
-        loginButton.disabled = false;
-        loginButton.innerText = "Login";
-
-    }
-
-}
-
-</script></body></html>
+</html>
