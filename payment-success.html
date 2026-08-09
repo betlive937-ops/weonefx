@@ -5,97 +5,50 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Payment Verification - WeOneFX</title>
 
 <style>
 
 body {
-    margin: 0;
-    min-height: 100vh;
     background: #111827;
     color: white;
     font-family: Arial, Helvetica, sans-serif;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 20px;
-    box-sizing: border-box;
+    text-align: center;
+    padding-top: 80px;
 }
 
 .container {
     width: 500px;
-    max-width: 100%;
-
+    max-width: 90%;
+    margin: auto;
     background: #1f2937;
-
-    padding: 40px 30px;
-
-    border-radius: 16px;
-
+    padding: 30px;
+    border-radius: 12px;
     box-sizing: border-box;
-
-    text-align: center;
-
-    box-shadow:
-        0 10px 30px rgba(0,0,0,0.35);
 }
 
-.logo {
+h1 {
     color: #f4c542;
-
-    font-size: 32px;
-
-    font-weight: bold;
-
-    margin-bottom: 10px;
-}
-
-h2 {
-    margin-top: 10px;
-
-    font-size: 24px;
 }
 
 #status {
-    margin-top: 30px;
-
+    margin-top: 25px;
     font-size: 18px;
-
     line-height: 1.6;
-
-    min-height: 80px;
-}
-
-.status-icon {
-    font-size: 42px;
-
-    display: block;
-
-    margin-bottom: 15px;
+    word-wrap: break-word;
 }
 
 button {
     margin-top: 30px;
-
-    padding: 13px 28px;
-
+    padding: 12px 25px;
     background: #f4c542;
-
     color: #111827;
-
     border: none;
-
     border-radius: 8px;
-
     cursor: pointer;
-
     font-size: 16px;
-
     font-weight: bold;
 }
 
@@ -103,17 +56,10 @@ button:hover {
     background: gold;
 }
 
-button:disabled {
-    opacity: 0.6;
-
-    cursor: not-allowed;
-}
-
-.small {
-    margin-top: 20px;
-
-    color: #9ca3af;
-
+pre {
+    text-align: left;
+    white-space: pre-wrap;
+    word-wrap: break-word;
     font-size: 13px;
 }
 
@@ -121,52 +67,28 @@ button:disabled {
 
 </head>
 
-
 <body>
 
 <div class="container">
 
-    <div class="logo">
-        WeOneFX
-    </div>
+    <h1>WeOneFX</h1>
 
-    <h2>
-        Payment Verification
-    </h2>
+    <h2>Payment Verification</h2>
 
     <p id="status">
-
-        <span class="status-icon">🔄</span>
-
-        Verifying your payment...
-
+        🔄 Verifying your payment...
     </p>
 
-    <button id="dashboardButton">
-
+    <button
+        id="dashboardButton"
+        type="button">
         Return to Dashboard
-
     </button>
-
-    <div class="small">
-
-        Please do not close this page while your payment is being verified.
-
-    </div>
 
 </div>
 
-
-<!-- IMPORTANT:
-     JavaScript is loaded from an external file.
-     This is compatible with script-src 'self'.
--->
-
-<script
-    src="/payment-success.js?v=2"
-    defer>
-</script>
-
+<!-- External JavaScript only -->
+<script src="payment-success.js"></script>
 
 </body>
 
