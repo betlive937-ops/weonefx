@@ -802,7 +802,7 @@ app.post("/api/pay", async (req, res) => {
                 "WeOneFX Wallet Deposit",
 
             callback_url:
-                "https://truthful-motivation-production-2515.up.railway.app/payment-success.html",
+    "https://weonefx-production.up.railway.app/payment-success.html",
 
             notification_id:
                 process.env.PESAPAL_IPN_ID,
@@ -967,22 +967,29 @@ app.post("/api/pay", async (req, res) => {
 
 });
 // ======================================
-// Verify Payment & Credit Wallet
+// Verify Pesapal Payment & Credit Wallet
 // ======================================
 app.post("/api/confirm-payment", async (req, res) => {
 
-    const { orderTrackingId, email } = req.body;
+    const {
+        orderTrackingId,
+        orderMerchantReference,
+        email
+    } = req.body;
 
     if (!orderTrackingId || !email) {
         return res.status(400).json({
             success: false,
-            message: "Missing orderTrackingId or email."
+            message: "Missing payment information."
         });
     }
 
     try {
 
-        // Get Pesapal Token
+        // ======================================
+        // Get Pesapal Access Token
+        // ======================================
+
         const auth = await axios.post(
             "https://pay.pesapal.com/v3/api/Auth/RequestToken",
             {
@@ -993,164 +1000,352 @@ app.post("/api/confirm-payment", async (req, res) => {
                 headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
-                }
+                },
+                timeout: 30000
             }
         );
 
-        const token = auth.data.token;
+        const token = auth.data?.token;
 
-        // Get Payment Status
+        if (!token) {
+            return res.status(500).json({
+                success: false,
+                message: "Unable to authenticate with Pesapal."
+            });
+        }
+
+
+        // ======================================
+        // Get Payment Status From Pesapal
+        // ======================================
+
         const statusResponse = await axios.get(
-            `https://pay.pesapal.com/v3/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
+            `https://pay.pesapal.com/v3/api/Transactions/GetTransactionStatus?orderTrackingId=${encodeURIComponent(orderTrackingId)}`,
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     Accept: "application/json"
-                }
+                },
+                timeout: 30000
             }
         );
 
         const payment = statusResponse.data;
 
-        if (payment.payment_status_description !== "Completed") {
+        console.log(
+            "Pesapal payment status:",
+            payment.payment_status_description
+        );
+
+
+        // ======================================
+        // Payment Not Completed
+        // ======================================
+
+        if (
+            payment.payment_status_description !== "Completed"
+        ) {
 
             return res.json({
                 success: false,
-                payment
+                message: "Payment has not been completed.",
+                paymentStatus:
+                    payment.payment_status_description || "Unknown"
             });
 
         }
 
-        db.query(
-            "SELECT * FROM transactions WHERE order_tracking_id=?",
-            [orderTrackingId],
-            (err, transactionRows) => {
 
-                if (err) {
+        // ======================================
+        // Find Pending Transaction
+        // ======================================
 
-                    return res.status(500).json({
-                        success: false,
-                        error: err.message
-                    });
+        const findTransaction = (callback) => {
 
-                }
-
-                if (
-                    transactionRows.length > 0 &&
-                    transactionRows[0].status === "COMPLETED"
-                ) {
-
-                    return res.json({
-                        success: true,
-                        message: "Payment already credited."
-                    });
-
-                }
+            if (orderMerchantReference) {
 
                 db.query(
-                    "SELECT id,balance FROM users WHERE email=?",
-                    [email],
-                    async (err, userRows) => {
+                    `SELECT *
+                     FROM transactions
+                     WHERE merchant_reference=?
+                     AND email=?
+                     LIMIT 1`,
+                    [
+                        orderMerchantReference,
+                        email.trim().toLowerCase()
+                    ],
+                    callback
+                );
 
-                        if (err) {
+            } else {
 
-                            return res.status(500).json({
-                                success: false,
-                                error: err.message
-                            });
-
-                        }
-
-                        if (userRows.length === 0) {
-
-                            return res.status(404).json({
-                                success: false,
-                                message: "User not found."
-                            });
-
-                        }
-
-                        const userId = userRows[0].id;
-                        const currentBalance = Number(userRows[0].balance);
-                        const depositAmount = Number(payment.amount);
-                        const newBalance = currentBalance + depositAmount;
-
-                        db.query(
-                            "UPDATE users SET balance=? WHERE id=?",
-                            [newBalance, userId],
-                            async (updateErr) => {
-
-                                if (updateErr) {
-
-                                    return res.status(500).json({
-                                        success: false,
-                                        error: updateErr.message
-                                    });
-
-                                }
-
-                                db.query(
-                                    `UPDATE transactions
-                                     SET order_tracking_id=?, status='COMPLETED'
-                                     WHERE email=?`,
-                                    [orderTrackingId, email],
-                                    async (transErr) => {
-
-                                        if (transErr) {
-
-                                            return res.status(500).json({
-                                                success: false,
-                                                error: transErr.message
-                                            });
-
-                                        }
-
-                                        try {
-
-                                            await saveWalletTransaction(
-                                                userId,
-                                                "deposit",
-                                                depositAmount,
-                                                payment.currency,
-                                                "Pesapal",
-                                                orderTrackingId,
-                                                "Completed"
-                                            );
-
-                                            return res.json({
-                                                success: true,
-                                                message: "Wallet credited successfully.",
-                                                balance: newBalance
-                                            });
-
-                                        } catch (walletErr) {
-
-                                            return res.status(500).json({
-                                                success: false,
-                                                error: walletErr.message
-                                            });
-
-                                        }
-
-                                    }
-                                );
-
-                            }
-                        );
-
-                    }
+                db.query(
+                    `SELECT *
+                     FROM transactions
+                     WHERE email=?
+                     AND status='PENDING'
+                     ORDER BY id DESC
+                     LIMIT 1`,
+                    [
+                        email.trim().toLowerCase()
+                    ],
+                    callback
                 );
 
             }
-        );
+
+        };
+
+
+        findTransaction((err, transactionRows) => {
+
+            if (err) {
+
+                console.error(
+                    "Transaction lookup error:",
+                    err
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Unable to find payment transaction."
+                });
+
+            }
+
+
+            if (transactionRows.length === 0) {
+
+                return res.status(404).json({
+                    success: false,
+                    message: "Payment transaction not found."
+                });
+
+            }
+
+
+            const transaction =
+                transactionRows[0];
+
+
+            // ======================================
+            // Prevent Double Credit
+            // ======================================
+
+            if (transaction.status === "COMPLETED") {
+
+                return res.json({
+                    success: true,
+                    message: "Payment already credited."
+                });
+
+            }
+
+
+            // ======================================
+            // Verify Amount
+            // ======================================
+
+            const depositAmount =
+                Number(payment.amount);
+
+            const transactionAmount =
+                Number(transaction.amount);
+
+
+            if (
+                !depositAmount ||
+                depositAmount !== transactionAmount
+            ) {
+
+                console.error(
+                    "Payment amount mismatch:",
+                    {
+                        transactionAmount,
+                        depositAmount
+                    }
+                );
+
+                return res.status(400).json({
+                    success: false,
+                    message: "Payment amount does not match the deposit request."
+                });
+
+            }
+
+
+            // ======================================
+            // Find User
+            // ======================================
+
+            db.query(
+                "SELECT id,balance FROM users WHERE email=?",
+                [
+                    email.trim().toLowerCase()
+                ],
+                (err, userRows) => {
+
+                    if (err) {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Unable to find user."
+                        });
+
+                    }
+
+
+                    if (userRows.length === 0) {
+
+                        return res.status(404).json({
+                            success: false,
+                            message: "User not found."
+                        });
+
+                    }
+
+
+                    const userId =
+                        userRows[0].id;
+
+                    const currentBalance =
+                        Number(userRows[0].balance || 0);
+
+                    const newBalance =
+                        currentBalance + depositAmount;
+
+
+                    // ======================================
+                    // Credit Wallet
+                    // ======================================
+
+                    db.query(
+                        "UPDATE users SET balance=? WHERE id=?",
+                        [
+                            newBalance,
+                            userId
+                        ],
+                        async (updateErr) => {
+
+                            if (updateErr) {
+
+                                console.error(
+                                    "Wallet update error:",
+                                    updateErr
+                                );
+
+                                return res.status(500).json({
+                                    success: false,
+                                    message: "Unable to update wallet."
+                                });
+
+                            }
+
+
+                            // ======================================
+                            // Mark Transaction Completed
+                            // ======================================
+
+                            db.query(
+                                `UPDATE transactions
+                                 SET order_tracking_id=?,
+                                     status='COMPLETED'
+                                 WHERE id=?`,
+                                [
+                                    orderTrackingId,
+                                    transaction.id
+                                ],
+                                async (transErr) => {
+
+                                    if (transErr) {
+
+                                        console.error(
+                                            "Transaction update error:",
+                                            transErr
+                                        );
+
+                                        return res.status(500).json({
+                                            success: false,
+                                            message: "Wallet credited but transaction update failed."
+                                        });
+
+                                    }
+
+
+                                    // ======================================
+                                    // Save Wallet Transaction
+                                    // ======================================
+
+                                    try {
+
+                                        await saveWalletTransaction(
+                                            userId,
+                                            "deposit",
+                                            depositAmount,
+                                            payment.currency || transaction.currency || "KES",
+                                            "Pesapal",
+                                            orderTrackingId,
+                                            "Completed"
+                                        );
+
+
+                                        console.log(
+                                            "✅ WALLET CREDITED:",
+                                            email,
+                                            depositAmount
+                                        );
+
+
+                                        return res.json({
+
+                                            success: true,
+
+                                            message:
+                                                "Wallet credited successfully.",
+
+                                            balance:
+                                                newBalance
+
+                                        });
+
+
+                                    } catch (walletErr) {
+
+                                        console.error(
+                                            "Wallet transaction log error:",
+                                            walletErr
+                                        );
+
+                                        return res.status(500).json({
+                                            success: false,
+                                            message: "Payment was completed but wallet transaction logging failed."
+                                        });
+
+                                    }
+
+                                }
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+        });
 
     } catch (err) {
 
-        console.error(err.response?.data || err.message);
+        console.error(
+            "❌ PESAPAL CONFIRM PAYMENT ERROR:",
+            err.response?.data || err.message
+        );
 
         return res.status(500).json({
             success: false,
-            error: err.response?.data || err.message
+            message: "Unable to verify Pesapal payment.",
+            error:
+                err.response?.data || err.message
         });
 
     }
