@@ -13,48 +13,108 @@
 <style>
 
 body {
+    margin: 0;
+    min-height: 100vh;
     background: #111827;
     color: white;
     font-family: Arial, Helvetica, sans-serif;
-    text-align: center;
-    padding-top: 80px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .container {
     width: 500px;
-    max-width: 90%;
-    margin: auto;
+    max-width: 100%;
+
     background: #1f2937;
-    padding: 30px;
-    border-radius: 12px;
+
+    padding: 40px 30px;
+
+    border-radius: 16px;
+
     box-sizing: border-box;
+
+    text-align: center;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.35);
 }
 
-h1 {
+.logo {
     color: #f4c542;
+
+    font-size: 32px;
+
+    font-weight: bold;
+
+    margin-bottom: 10px;
+}
+
+h2 {
+    margin-top: 10px;
+
+    font-size: 24px;
 }
 
 #status {
-    margin-top: 25px;
+    margin-top: 30px;
+
     font-size: 18px;
+
     line-height: 1.6;
-    word-wrap: break-word;
+
+    min-height: 80px;
+}
+
+.status-icon {
+    font-size: 42px;
+
+    display: block;
+
+    margin-bottom: 15px;
 }
 
 button {
     margin-top: 30px;
-    padding: 12px 25px;
+
+    padding: 13px 28px;
+
     background: #f4c542;
+
     color: #111827;
+
     border: none;
+
     border-radius: 8px;
+
     cursor: pointer;
+
     font-size: 16px;
+
     font-weight: bold;
 }
 
 button:hover {
     background: gold;
+}
+
+button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+.small {
+    margin-top: 20px;
+
+    color: #9ca3af;
+
+    font-size: 13px;
 }
 
 </style>
@@ -66,304 +126,47 @@ button:hover {
 
 <div class="container">
 
-    <h1>WeOneFX</h1>
+    <div class="logo">
+        WeOneFX
+    </div>
 
-    <h2>Payment Verification</h2>
+    <h2>
+        Payment Verification
+    </h2>
 
     <p id="status">
-        🔄 Verifying your payment...
+
+        <span class="status-icon">🔄</span>
+
+        Verifying your payment...
+
     </p>
 
-    <button onclick="window.location.href='dashboard.html'">
+    <button id="dashboardButton">
+
         Return to Dashboard
+
     </button>
+
+    <div class="small">
+
+        Please do not close this page while your payment is being verified.
+
+    </div>
 
 </div>
 
 
-<script>
-
-"use strict";
-
-
-// ======================================
-// GET PESAPAL PARAMETERS
-// ======================================
-
-const params =
-    new URLSearchParams(window.location.search);
-
-
-// Pesapal normally returns OrderTrackingId
-const trackingId =
-    params.get("OrderTrackingId") ||
-    params.get("orderTrackingId") ||
-    params.get("ordertrackingid");
-
-
-// Pesapal may also return merchant reference
-const merchantReference =
-    params.get("OrderMerchantReference") ||
-    params.get("orderMerchantReference") ||
-    params.get("OrderMerchantRef") ||
-    params.get("orderMerchantRef");
-
-
-const statusElement =
-    document.getElementById("status");
-
-
-// ======================================
-// DEBUG
-// ======================================
-
-console.log(
-    "Pesapal callback URL:",
-    window.location.href
-);
-
-console.log(
-    "Order Tracking ID:",
-    trackingId
-);
-
-console.log(
-    "Merchant Reference:",
-    merchantReference
-);
-
-
-// ======================================
-// GET LOGGED-IN USER
-// ======================================
-
-let currentUser = null;
-
-try {
-
-    currentUser =
-        JSON.parse(
-            localStorage.getItem("loggedUser")
-        );
-
-} catch (error) {
-
-    console.error(
-        "Unable to read logged user:",
-        error
-    );
-
-}
-
-
-// ======================================
-// CHECK USER
-// ======================================
-
-if (!currentUser || !currentUser.email) {
-
-    statusElement.innerHTML =
-        "❌ Your login session could not be found.<br><br>" +
-        "Please login again.";
-
-}
-
-
-// ======================================
-// CHECK TRACKING ID
-// ======================================
-
-else if (!trackingId) {
-
-    statusElement.innerHTML =
-        "⚠️ Pesapal did not return an Order Tracking ID.<br><br>" +
-        "The payment cannot be verified.";
-
-    console.error(
-        "No OrderTrackingId received."
-    );
-
-}
-
-
-// ======================================
-// VERIFY PAYMENT
-// ======================================
-
-else {
-
-    statusElement.innerHTML =
-        "🔄 Contacting WeOneFX payment server...";
-
-
-    fetch("/api/confirm-payment", {
-
-        method: "POST",
-
-        headers: {
-
-            "Content-Type":
-                "application/json"
-
-        },
-
-        body: JSON.stringify({
-
-            orderTrackingId:
-                trackingId,
-
-            email:
-                currentUser.email
-
-        })
-
-    })
-
-
-    // ======================================
-    // READ SERVER RESPONSE
-    // ======================================
-
-    .then(async response => {
-
-        let data;
-
-        try {
-
-            data =
-                await response.json();
-
-        } catch (error) {
-
-            throw new Error(
-                "The payment server returned an invalid response."
-            );
-
-        }
-
-
-        console.log(
-            "WeOneFX confirmation response:",
-            data
-        );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.message ||
-                data.error ||
-                "Payment verification failed."
-            );
-
-        }
-
-
-        return data;
-
-    })
-
-
-    // ======================================
-    // HANDLE RESULT
-    // ======================================
-
-    .then(data => {
-
-
-        // ======================================
-        // SUCCESS
-        // ======================================
-
-        if (data.success === true) {
-
-            statusElement.innerHTML =
-                "✅ <strong>Payment Verified Successfully!</strong>" +
-                "<br><br>" +
-                "Your WeOneFX wallet has been credited.";
-
-
-            // ======================================
-            // UPDATE LOCAL BALANCE
-            // ======================================
-
-            if (
-                typeof data.balance !== "undefined"
-            ) {
-
-                currentUser.balance =
-                    Number(data.balance);
-
-
-                localStorage.setItem(
-                    "loggedUser",
-                    JSON.stringify(currentUser)
-                );
-
-
-                console.log(
-                    "New wallet balance:",
-                    data.balance
-                );
-
-            }
-
-        }
-
-
-        // ======================================
-        // PAYMENT NOT COMPLETED
-        // ======================================
-
-        else {
-
-            const payment =
-                data.payment || {};
-
-
-            const paymentStatus =
-                data.paymentStatus ||
-                payment.payment_status_description ||
-                "Not completed";
-
-
-            statusElement.innerHTML =
-                "⚠️ <strong>Payment has not been completed.</strong>" +
-                "<br><br>" +
-                "Payment status: " +
-                paymentStatus +
-                "<br><br>" +
-                "If you have already paid, please wait a moment and try again.";
-
-        }
-
-    })
-
-
-    // ======================================
-    // ERROR
-    // ======================================
-
-    .catch(error => {
-
-        console.error(
-            "Payment verification error:",
-            error
-        );
-
-
-        statusElement.innerHTML =
-            "❌ <strong>Unable to verify your payment.</strong>" +
-            "<br><br>" +
-            error.message +
-            "<br><br>" +
-            "Please try again or check your transaction history.";
-
-    });
-
-}
-
+<!-- IMPORTANT:
+     JavaScript is loaded from an external file.
+     This is compatible with script-src 'self'.
+-->
+
+<script
+    src="/payment-success.js?v=2"
+    defer>
 </script>
+
 
 </body>
 
