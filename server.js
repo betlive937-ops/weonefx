@@ -22,7 +22,25 @@ app.set("trust proxy", 1);
 // Middleware
 // ================================
 
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "https://s3.tradingview.com"],
+                scriptSrcAttr: ["'none'"],
+                styleSrc: ["'self'", "'unsafe-inline'"],
+                imgSrc: ["'self'", "data:", "https:"],
+connectSrc: ["'self'"],
+fontSrc: ["'self'", "https:", "data:"],
+frameSrc: ["'self'", "https://www.tradingview.com", "https://s.tradingview.com"],
+objectSrc: ["'none'"],
+baseUri: ["'self'"],
+frameAncestors: ["'self'"]
+            }
+        }
+    })
+);
 
 app.use(cors());
 

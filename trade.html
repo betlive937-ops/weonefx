@@ -1,96 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Trade - WeOneFX</title><link rel="stylesheet" href="style.css"><!-- TradingView library --><script src="https://s3.tradingview.com/tv.js"></script><style>
 
-<head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Trade - WeOneFX</title>
-
-<link rel="stylesheet" href="style.css">
-
-<script src="https://s3.tradingview.com/tv.js"></script>
-
-<style>
-
-#tradingview_chart{
-width:100%;
-height:500px;
-margin-top:20px;
-margin-bottom:20px;
+#tradingview_chart {
+    width: 100%;
+    height: 500px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 #asset,
 #duration,
-#stake{
-
-width:300px;
-padding:12px;
-margin:10px;
-font-size:18px;
-
+#stake {
+    width: 300px;
+    padding: 12px;
+    margin: 10px;
+    font-size: 18px;
 }
 
-button{
-
-padding:15px 30px;
-font-size:18px;
-margin:10px;
-cursor:pointer;
-
+button {
+    padding: 15px 30px;
+    font-size: 18px;
+    margin: 10px;
+    cursor: pointer;
 }
 
-#upBtn{
-
-background:green;
-color:white;
-
+#upBtn {
+    background: green;
+    color: white;
 }
 
-#downBtn{
-
-background:red;
-color:white;
-
+#downBtn {
+    background: red;
+    color: white;
 }
 
-table{
-
-width:100%;
-border-collapse:collapse;
-margin-top:30px;
-
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
 }
 
-th,td{
-
-border:1px solid #444;
-padding:12px;
-text-align:center;
-
+th,
+td {
+    border: 1px solid #444;
+    padding: 12px;
+    text-align: center;
 }
 
-th{
-
-background:#222;
-
+th {
+    background: #222;
 }
 
-</style>
-
-</head>
-
-<body>
-
-<nav>
-
-<h2>WeOneFX</h2>
-
-<div>
-
-<a href="dashboard.html">Dashboard</a>
+</style></head><body><nav><h2>WeOneFX</h2><div><a href="dashboard.html">Dashboard</a>
 
 <a href="deposit.html">Deposit</a>
 
@@ -104,331 +64,62 @@ background:#222;
 
 <a href="login.html">Logout</a>
 
-</div>
-
-</nav>
-
-<section class="hero">
-
-<h1>Binary Options Trading</h1>
-
-<div id="tradingview_chart"></div>
-
-<h3>Select Trading Asset</h3>
-
-<select id="asset" onchange="changeAsset()">
-
-<option value="BITSTAMP:BTCUSD">Bitcoin (BTC/USD)</option>
-
-<option value="BITSTAMP:ETHUSD">Ethereum (ETH/USD)</option>
-
-<option value="FX:EURUSD">EUR/USD</option>
-
-<option value="FX:GBPUSD">GBP/USD</option>
-
-<option value="FX:USDJPY">USD/JPY</option>
-
-<option value="OANDA:XAUUSD">Gold (XAU/USD)</option>
-
-<option value="NASDAQ:AAPL">Apple</option>
-
-<option value="NASDAQ:TSLA">Tesla</option>
-
-</select>
-
-<br>
-
-<h3>Available Balance</h3>
-
-<h2>$<span id="balance">0.00</span></h2>
-
-<br>
-
-<h3>Trade Duration</h3>
-
-<select id="duration">
-
-<option value="30">30 Seconds</option>
-
-<option value="60" selected>1 Minute</option>
-
-<option value="300">5 Minutes</option>
-
-</select>
-
-<br>
-
-<input
+</div></nav><section class="hero"><h1>Binary Options Trading</h1><!-- TradingView chart --><div id="tradingview_chart"></div><h3>Select Trading Asset</h3><select id="asset"><option value="BITSTAMP:BTCUSD">
+Bitcoin (BTC/USD)
+</option><option value="BITSTAMP:ETHUSD">
+Ethereum (ETH/USD)
+</option><option value="FX:EURUSD">
+EUR/USD
+</option><option value="FX:GBPUSD">
+GBP/USD
+</option><option value="FX:USDJPY">
+USD/JPY
+</option><option value="OANDA:XAUUSD">
+Gold (XAU/USD)
+</option><option value="NASDAQ:AAPL">
+Apple
+</option><option value="NASDAQ:TSLA">
+Tesla
+</option></select><br><h3>Available Balance</h3><h2>
+$
+<span id="balance">0.00</span>
+</h2><br><h3>Trade Duration</h3><select id="duration"><option value="30">
+30 Seconds
+</option><option value="60" selected>
+1 Minute
+</option><option value="300">
+5 Minutes
+</option></select><br><input
 type="number"
 id="stake"
-placeholder="Enter Trade Amount">
+placeholder="Enter Trade Amount"
 
-<br>
+«»
 
-<button id="upBtn" onclick="startTrade('UP')">
-
+<br><button
+id="upBtn"
+type="button">
 UP
-
 </button>
 
-<button id="downBtn" onclick="startTrade('DOWN')">
-
+<button
+id="downBtn"
+type="button">
 DOWN
-
 </button>
 
 <br><br>
 
-<h2 id="timer">0</h2>
-
-<p id="status">
-
+<h2 id="timer">
+0
+</h2><p id="status">
 Waiting for trade...
-
-</p>
-
-<h2>Open Trades</h2>
-
-<table>
-
-<thead>
-
-<tr>
-
-<th>Asset</th>
-
+</p><h2>
+Open Trades
+</h2><table><thead><tr><th>Asset</th>
 <th>Direction</th>
-
 <th>Amount</th>
-
 <th>Time Left</th>
-
-<th>Status</th>
-
-</tr>
-
-</thead>
-
-<tbody id="openTrades">
-
-<tr>
-
-<td colspan="5">
-
+<th>Status</th></tr></thead><tbody id="openTrades"><tr><td colspan="5">
 No open trades.
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-<script src="app.js"></script>
-
-<script>
-
-// Show logged-in user's balance
-showBalance("balance");
-
-// Load last selected asset
-let selectedAsset =
-localStorage.getItem("selectedAsset") || "FX:EURUSD";
-
-document.getElementById("asset").value = selectedAsset;
-
-// TradingView Chart
-new TradingView.widget({
-
-    "width":"100%",
-    "height":500,
-    "symbol":selectedAsset,
-    "interval":"1",
-    "timezone":"Africa/Nairobi",
-    "theme":"dark",
-    "style":"1",
-    "locale":"en",
-    "toolbar_bg":"#1f1f1f",
-    "enable_publishing":false,
-    "allow_symbol_change":true,
-    "container_id":"tradingview_chart"
-
-});
-
-// Change Asset
-function changeAsset(){
-
-    localStorage.setItem(
-        "selectedAsset",
-        document.getElementById("asset").value
-    );
-
-    location.reload();
-
-}
-
-// Open Trades Table
-let openTable =
-document.getElementById("openTrades");
-
-// Remove "No open trades" row
-function clearOpenTradesMessage(){
-
-    if(openTable.rows.length==1 &&
-       openTable.rows[0].cells.length==1){
-
-        openTable.innerHTML="";
-
-    }
-
-}
-
-</script>
-<script>
-
-function startTrade(direction){
-
-let amount = Number(document.getElementById("stake").value);
-
-if(amount<=0){
-alert("Enter a valid trade amount.");
-return;
-}
-
-let user=getLoggedUser();
-
-if(!user){
-alert("Please login.");
-return;
-}
-
-if(user.frozen){
-alert("Your account has been frozen.");
-return;
-}
-
-if(user.balance<amount){
-alert("Insufficient balance.");
-return;
-}
-
-user.balance-=amount;
-updateCurrentUser(user);
-showBalance("balance");
-
-let seconds=Number(document.getElementById("duration").value);
-
-let asset=document.getElementById("asset");
-let assetName=asset.options[asset.selectedIndex].text;
-
-clearOpenTradesMessage();
-
-let tradeId="trade_"+Date.now()+"_"+Math.floor(Math.random()*100000);
-
-openTable.innerHTML+=`
-<tr id="${tradeId}">
-<td>${assetName}</td>
-<td>${direction}</td>
-<td>$${amount.toFixed(2)}</td>
-<td id="${tradeId}_time">${seconds}</td>
-<td id="${tradeId}_status">Running</td>
-</tr>
-`;
-
-document.getElementById("status").innerHTML=
-"Trade running ("+direction+")";
-
-let timer=setInterval(function(){
-
-seconds--;
-
-let timeCell=document.getElementById(tradeId+"_time");
-
-if(timeCell){
-timeCell.innerHTML=seconds;
-}
-
-document.getElementById("timer").innerHTML=seconds;
-
-if(seconds<=0){
-
-clearInterval(timer);
-
-let mode=
-localStorage.getItem("tradeMode") || "RANDOM";
-
-let win;
-
-if(mode==="WIN"){
-
-win=true;
-
-}else if(mode==="LOSS"){
-
-win=false;
-
-}else{
-
-win=Math.random()<0.5;
-
-}
-
-let statusCell=
-document.getElementById(tradeId+"_status");
-
-if(win){
-
-user.balance+=amount+(amount*0.9);
-
-addTrade(direction,amount,"WIN");
-
-if(statusCell){
-statusCell.innerHTML="✅ WIN";
-statusCell.style.color="lime";
-}
-
-}else{
-
-addTrade(direction,amount,"LOSS");
-
-if(statusCell){
-statusCell.innerHTML="❌ LOSS";
-statusCell.style.color="red";
-}
-
-}
-
-updateCurrentUser(user);
-
-showBalance("balance");
-
-setTimeout(function(){
-
-let row=document.getElementById(tradeId);
-
-if(row){
-row.remove();
-}
-
-if(openTable.rows.length===0){
-
-openTable.innerHTML=
-"<tr><td colspan='5'>No open trades.</td></tr>";
-
-}
-
-},3000);
-
-}
-
-},1000);
-
-}
-
-</script>
-
-</section>
-
-</body>
-
-</html>
+</td></tr></tbody></table></section><!-- Existing application JavaScript --><script src="app.js"></script><!-- Trading page JavaScript --><script src="trade.js"></script></body></html>
