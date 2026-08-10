@@ -1,202 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
 <title>Withdraw - WeOneFX</title>
 
 <link rel="stylesheet" href="style.css">
 
 <style>
 
-body{
-    background:#111827;
-    color:white;
-    font-family:Arial,Helvetica,sans-serif;
+body {
+    background: #111827;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-.hero{
-    text-align:center;
-    margin-top:60px;
+.hero {
+    text-align: center;
+    margin-top: 60px;
 }
 
-input{
-    width:320px;
-    padding:12px;
-    margin:10px;
-    border-radius:8px;
-    border:none;
-    font-size:16px;
+input {
+    width: 320px;
+    padding: 12px;
+    margin: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
 }
 
-button{
-    padding:12px 25px;
-    background:#f4c542;
-    border:none;
-    border-radius:8px;
-    font-size:18px;
-    cursor:pointer;
+button {
+    padding: 12px 25px;
+    background: #f4c542;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
 }
 
-button:hover{
-    background:gold;
+button:hover {
+    background: gold;
 }
 
-#message{
-    margin-top:20px;
-    color:#00ff99;
+#message {
+    margin-top: 20px;
+    color: #00ff99;
 }
 
 </style>
 
 </head>
 
+
 <body>
+
 
 <nav>
 
-<h2>WeOneFX</h2>
+    <h2>WeOneFX</h2>
 
-<div>
-<a href="dashboard.html">Dashboard</a>
-<a href="deposit.html">Deposit</a>
-<a href="withdraw.html">Withdraw</a>
-<a href="trade.html">Trade</a>
-<a href="history.html">History</a>
-<a href="profile.html">Profile</a>
-<a href="login.html">Logout</a>
-</div>
+    <div>
+
+        <a href="dashboard.html">Dashboard</a>
+
+        <a href="deposit.html">Deposit</a>
+
+        <a href="withdraw.html">Withdraw</a>
+
+        <a href="trade.html">Trade</a>
+
+        <a href="history.html">History</a>
+
+        <a href="profile.html">Profile</a>
+
+        <a href="login.html">Logout</a>
+
+    </div>
 
 </nav>
 
+
 <section class="hero">
 
-<h1>Withdraw Funds</h1>
 
-<h3>Current Balance: KES <span id="balance">0.00</span></h3>
+    <h1>Withdraw Funds</h1>
 
-<input
-type="text"
-id="phone"
-placeholder="2547XXXXXXXX">
 
-<br>
+    <h3>
+        Current Balance:
+        KES
+        <span id="balance">0.00</span>
+    </h3>
 
-<input
-type="number"
-id="amount"
-placeholder="KES 2,000 - 100,000">
 
-<br>
+    <input
+        type="text"
+        id="phone"
+        placeholder="2547XXXXXXXX"
+    >
 
-<button onclick="requestWithdrawal()">
-Submit Withdrawal Request
-</button>
 
-<p id="message"></p>
+    <br>
 
-<br>
 
-<a href="dashboard.html">
-<button>
-Back to Dashboard
-</button>
-</a>
+    <input
+        type="number"
+        id="amount"
+        placeholder="KES 2,000 - 100,000"
+    >
+
+
+    <br>
+
+
+    <button id="withdrawButton">
+        Submit Withdrawal Request
+    </button>
+
+
+    <p id="message"></p>
+
+
+    <br>
+
+
+    <a href="dashboard.html">
+        <button type="button">
+            Back to Dashboard
+        </button>
+    </a>
+
 
 </section>
 
+
+<!-- Existing application JavaScript -->
+
 <script src="app.js"></script>
 
-<script>
+<!-- Withdrawal JavaScript -->
 
-showBalance("balance");
+<script src="withdraw.js"></script>
 
-function requestWithdrawal(){
-
-    const phone = document.getElementById("phone").value.trim();
-    const amount = parseFloat(document.getElementById("amount").value);
-
-    const message = document.getElementById("message");
-
-    if(phone === ""){
-        message.innerHTML = "Please enter your phone number.";
-        return;
-    }
-
-    if(isNaN(amount)){
-        message.innerHTML = "Please enter a valid withdrawal amount.";
-        return;
-    }
-
-    if(amount < 2000){
-        message.innerHTML = "Minimum withdrawal is KES 2,000.";
-        return;
-    }
-
-    if(amount > 100000){
-        message.innerHTML = "Maximum withdrawal is KES 100,000.";
-        return;
-    }
-
-    const user = getLoggedUser();
-
-    if(!user){
-        alert("Please login first.");
-        window.location = "login.html";
-        return;
-    }
-
-    if(user.frozen){
-        alert("Your account has been frozen.");
-        return;
-    }
-
-    const balance = Number(user.balance);
-
-    if(amount > balance){
-        message.innerHTML = "Insufficient wallet balance.";
-        return;
-    }
-
-    let withdrawals =
-        JSON.parse(localStorage.getItem("withdrawals")) || [];
-
-    withdrawals.push({
-
-        fullName: user.fullName || user.fullname,
-
-        email: user.email,
-
-        phone: phone,
-
-        amount: amount,
-
-        status: "Pending",
-
-        date: new Date().toLocaleString()
-
-    });
-
-    localStorage.setItem(
-        "withdrawals",
-        JSON.stringify(withdrawals)
-    );
-
-    message.innerHTML =
-    "✅ Withdrawal request submitted successfully. Waiting for admin approval.";
-
-    document.getElementById("phone").value = "";
-    document.getElementById("amount").value = "";
-
-    setTimeout(function(){
-
-        window.location = "dashboard.html";
-
-    },1500);
-
-}
-
-</script>
 
 </body>
+
 </html>

@@ -2,7 +2,7 @@
 // WeOneFX Login
 // ======================================
 
-const API_URL =
+const API_URL = "";
     "https://weonefx-production.up.railway.app";
 
 
